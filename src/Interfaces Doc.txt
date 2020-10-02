@@ -1,0 +1,40 @@
+Interfaces:
+
+Message:
+
+Attacker/Defender
+
+    train : 
+        Run one training epoch on the current game memory
+        Parameters : None
+        Returns : None
+
+    saveModel :
+        Save the model to the models folder for reuse later
+        Parameters : 
+            modelName, string representing the mode to load, defaults to the default model
+        Returns : None
+
+    addTrainingPoint :
+        Adds one training point to the agents memory to review after the game
+        Parameters:
+            message : message object containing message meta data
+            suspicionScore : 0 to 1 float value determining how suspicous the defender found the message
+            reward : the integer reward for the current state action sequence
+        Returns : None
+
+Attacker:
+    getAttack :
+        Returns a malicious message from the attacker to insert in the queue
+        Parameters: 
+            TBD
+        Returns:
+            message : A message object containing meta data about the malicious message
+
+Defender:
+    inspect :
+        Analyzes and generates a suspicion score for the message
+        Parameters: 
+            message : message object containing message meta data
+        Returns:
+            suspicionScore : 0 to 1 float value determining how suspicous the defender found the message

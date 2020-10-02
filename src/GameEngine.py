@@ -1,7 +1,11 @@
+# Pyhton Libraries
 import argparse
 import networkx
 import random
 import pandas as pd
+import matplotlib.pyplot as plt
+
+# User defined libraries
 #from Attacker import Attacker
 #from Defender import Defender
 
@@ -41,7 +45,7 @@ class GameEngine():
 
     ###  Method functions
     
-    def __init__(self, datasetPath, networkPath):
+    def __init__(self, datasetPath, networkPath, load= False):
         """Class constructor
 
         Parameters
@@ -51,6 +55,9 @@ class GameEngine():
 
         networkPath
             String representing the file path to the network parameters file
+
+        load
+            Boolean describing whether previous models are loaded in for this game or new ones are initialized
             
         Returns
         -------
@@ -58,18 +65,18 @@ class GameEngine():
         """
         self.datasetPath = datasetPath
         self.networkPath = networkPath
+        self.load = load
         self.loadDataSet()
         self.initializeGame()
         self.firstGame = True
 
-    def initializeGame(self, load= False):
+    def initializeGame(self):
         """Initializes the starting game state, both players, and loads in the dataset
            Should be called after each game is played to prepare for the next one
 
         Parameters
         ----------
-        load
-            Boolean stating whether or not to load existing models for the next game
+        None
         
         Returns
         -------
@@ -84,13 +91,13 @@ class GameEngine():
             self.firstGame = False
             self.attacker = Attacker()
             self.defender = Defender()
+            if self.load:
+                self.attacker.loadModel()
+                self.self.defender.loadModel()
         else:
             self.attacker.prepareForNextGame()
             self.defender.prepareForNextGame()
             
-        if load:
-            self.attacker.loadModel()
-            self.defender.loadModel()
         
     def loadDataset(self, datasetPath):
         """loads in the dataset for generating background traffic
@@ -121,9 +128,11 @@ class GameEngine():
         self.graph = networkx.graph()
         with open(networkPath, 'r') as file:
             for line in file.readlines():
-                pass
+                #TODO:
                 # add node to graph
                 # add color map index to be blue
+                self.graph[message.origin] = GameEngine.COLOR_MAP[NO_SUSPICION_LABEL]
+                
     def runGame(self):
         """Runs through one instance of the game,
            game ends when one player runs out of lives
@@ -147,8 +156,7 @@ class GameEngine():
                 self.defender.addTrainingPoint(message, suspicionScore, reward)
                 if message.label == "Malicious": self.attacker.addTrainingPoint(message, suspicionScore, -reward)
 
-        self.attacker.saveModel()
-        self.defender.saveModel()
+            self.displayGraph()
         
     def self.gameOver(self):
         """Returns true if one player is out of lives"""
@@ -195,8 +203,9 @@ class GameEngine():
         numMessages = random.randint(0, GameEngine.MAX+BACKGROUND_TRAFFIC_MESSAGES)
         messages = []
         for i in range(numMessages):
-            #newMessage = 
-            #messages.append(newMessage)
+            #TODO:
+            # make message object
+            # grab random traffic
             pass
         return messages
 
@@ -218,9 +227,12 @@ class GameEngine():
         # TODO:
         # map suspicion score to color
         # recolor node based off message IP
-        self.colormap[message.origin] = GameEngine.COLOR_MAP[label]
-        
-        pass
+        self.colorMap[message.origin] = GameEngine.COLOR_MAP[label]
+
+
+    def displayGraph(self):
+        nx.draw(self.graph, node_color=self.colorMap, with_labels=True)
+        plt.show()
 
     def updateScore(self, message, label):
          """Calculates the reward earned for each player and updates lives
@@ -293,6 +305,8 @@ class GameEngine():
         """
         self.attacker.train()
         self.defender.train()
+        self.attacker.saveModel()
+        self.defender.saveModel()
 
 if __name__ == "__main__":
     """Runs a specified number of games, training can be turned on via the train flag"""
@@ -301,9 +315,10 @@ if __name__ == "__main__":
     parser.add_argument('-np', '--networkPath', type= str, default= "../networks/defaultNetwork.txt", help= 'Path to the file of network parameters for the game')
     parser.add_argument('-ep', '--episodes', type= int, default= 1, help= 'Number of games to be played')
     parser.add_argument('-t', '--train', action= 'store_true', help= 'Whether the agents should be training at the end of each game')
+    parser.add_argument('-l', '--load', action= 'store_true', help= 'Whether previous models should be loaded in for this game')
     args = parser.parse_args()
 
-    engine = GameEngine(datasetPath= args.dataPath, networkPath= args.networkPath)
+    engine = GameEngine(datasetPath= args.dataPath, networkPath= args.networkPath, load= args.load)
 
     for episode in range(args.episodes):
         print('Starting episode', episode)
@@ -312,3 +327,4 @@ if __name__ == "__main__":
         if args.train:
             engine.train()
             print('Training for episode', episode, 'complete')
+        engine.initializeGame()
