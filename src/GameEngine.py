@@ -21,6 +21,25 @@ class GameEngine():
         Reinforcement learning is utilized at the end of every game using Q learning to improve both
         combatants in their roles.
     """
+
+    ### Static Class Variables
+
+    MAX_BACKGROUND_TRAFFIC_MESSAGES = 5      # The maximum number of background messages between attacks
+    
+    # Thresholds for the suspicion score 
+    NO_SUSPICION_CUTOFF     = .1                                       # Any messages below this threshold are considered not suspicous                                       
+    LOW_SUSPICION_CUTOFF  = .35                                   # Any messages inside this threshold are still considered not suspicous but are colored differently
+    MEDIUM_SUSPICION_CUTOFF = .6                              #  Any messages inside this threshold are considered  flagged but not ouright rejected
+
+    # Colorings for suspicion scores
+    NO_SUSPICION_LABEL = 'NONE'
+    LOW_SUSPICION_LABEL = 'LOW'
+    MEDIUM_SUSPICION_LABEL = 'MEDIUM'
+    HIGH_SUSPICION_LABEL = 'HIGH'
+
+    COLOR_MAP = {NO_SUSPICION_LABEL  : 'blue'. LOW_SUSPICION_LABEL  : 'yellow', MEDIUM_SUSPICION_LABEL :  'orange', HIGH_SUSPICION_LABEL : 'red'}
+
+    ###  Method functions
     
     def __init__(self, datasetPath, networkPath):
         """Class constructor
@@ -57,13 +76,18 @@ class GameEngine():
         None
         """
         self.queue = []
+        self.turnHistory = []
         self.loadDataset
         self.initializeNetwork(self.networkPath)
+        
         if self.firstGame:
             self.firstGame = False
             self.attacker = Attacker()
             self.defender = Defender()
-
+        else:
+            self.attacker.prepareForNextGame()
+            self.defender.prepareForNextGame()
+            
         if load:
             self.attacker.loadModel()
             self.defender.loadModel()
@@ -98,7 +122,8 @@ class GameEngine():
         with open(networkPath, 'r') as file:
             for line in file.readlines():
                 pass
-        
+                # add node to graph
+                # add color map index to be blue
     def runGame(self):
         """Runs through one instance of the game,
            game ends when one player runs out of lives
@@ -115,8 +140,12 @@ class GameEngine():
             self.updateQueue()
             for message in self.queue:
                 suspicionScore = self.defender.inspect(message)
-                self.updateGraph(message, suspicionScore)
-                self.updateScore(message, suspicionScore)
+                label = self.getSuspicionLabel(suspicionScore)
+                self.updateGraph(message, label)
+                reward = self.updateScore(message, label)
+
+                self.defender.addTrainingPoint(message, suspicionScore, reward)
+                if message.label == "Malicious": self.attacker.addTrainingPoint(message, suspicionScore, -reward)
 
         self.attacker.saveModel()
         self.defender.saveModel()
@@ -145,39 +174,131 @@ class GameEngine():
             self.queue.append(message)
 
     def generateBackgroundTraffic(self):
+         """
+
+        Parameters
+        ----------
+        message
+            message object that contains metadata about the message being inspected
+
+       label
+           String label representing the suspicion category the message falls into
+        
+        Returns
+        -------
+        None
+        """
         # TODO:
         # return random number of background traffic messages
         # make message class
         # decide on features for message
-        pass
+        numMessages = random.randint(0, GameEngine.MAX+BACKGROUND_TRAFFIC_MESSAGES)
+        messages = []
+        for i in range(numMessages):
+            #newMessage = 
+            #messages.append(newMessage)
+            pass
+        return messages
 
-    def updateGraph(self, message, suspicionScore):
+    def updateGraph(self, message, label):
+        """Recolor the graph based on the new label
+
+        Parameters
+        ----------
+        message
+            message object that contains metadata about the message being inspected
+
+       label
+           String label representing the suspicion category the message falls into
+        
+        Returns
+        -------
+        None
+        """
         # TODO:
         # map suspicion score to color
         # recolor node based off message IP
+        self.colormap[message.origin] = GameEngine.COLOR_MAP[label]
+        
         pass
 
-    def updateScore(self, message, suspicionScore):
-        # TODO:
-        # map score to fuzzy membership values
-        # check if correct labeling
-        # update lives
-        pass
+    def updateScore(self, message, label):
+         """Calculates the reward earned for each player and updates lives
+
+        Parameters
+        ----------
+        message
+            message object that contains metadata about the message being inspected
+
+       label
+           String label representing the suspicion category the message falls into
+        
+        Returns
+        -------
+        None
+        """
+        reward = 0
+        if message.label == "Malicious" and label == GameEngine.HIGH_SUSPICION_LABEL :
+            self.attacker.lives -= 1
+            reward = 10
+        elif message.label == "Malicious" and label == GameEngine.MEDIUM_SUSPICION_LABEL :
+            reward = 5
+        elif message.label == "Malicious":
+            self.defender.lives -= 1
+            reward = -10
+        elif message.label == 'Benign' and label ==  GameEngine.HIGH_SUSPICION_LABEL :
+            self.defender.lives -= 1
+            reward = -10
+        elif message.label == 'Benign' and label == GameEngine.MEDIUM_SUSPICION_LABEL :
+            reward = 0
+        elif message.label == 'Benign':
+            reward = 10
+        return reward
+
+    def getSuspicionLabel(self, suspicionScore):
+         """Calculates the reward earned for each player and updates lives
+
+        Parameters
+        ----------
+        message
+            message object that contains metadata about the message being inspected
+
+        suspicionScore
+            float from 0 to 1 representing how certain probalisticly the defender things this message is malicious
+        
+        Returns
+        -------
+        None
+        """
+        label = GameEngine.NO_SUSPICION_LABEL 
+        if suspicionScore > GameEngine.NO_SUSPICION_SCORE and suspicionScore <= GameEngine.LOW_SUSPICION_CUTOFF:
+            label = GameEngine.LOW_SUSPICION_LABEL 
+        elif suspicionScore > GameEngine.LOW_SUSPICION_SCORE and suspicionScore <= GameEngine.MEDIUM_SUSPICION_CUTOFF 
+            label = GameEngine.MEDIUM_SUSPICION_LABEL 
+        elif  suspicionScore > GameEngine.MEDIUM_SUSPICION_CUTOFF:
+            label = GameEngine.HIGH_SUSPICION_LABEL 
+        
+        return label
 
     def train(self):
-        # TODO:
-        # Come up with method of saving and loading models
-        # train models
-        # write checkpoints and logs
-        # add game memory
-        pass
+        """starts the training runs for each player
+
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        None
+        """
+        self.attacker.train()
+        self.defender.train()
 
 if __name__ == "__main__":
     """Runs a specified number of games, training can be turned on via the train flag"""
-    
     parser = argparse.ArgumentParser(description= 'Processes game parameters.')
-    parser.add_argument('-dp', '--dataPath', type= str, default= "../networkFiles/defaultNetwork.txt", help= 'Path to the file of network parameters for the game')
-    parser.add_argument('-np', '--networkPath', type= str, default= "../networkFiles/defaultNetwork.txt", help= 'Path to the file of network parameters for the game')
+    parser.add_argument('-dp', '--dataPath', type= str, default= "../datasets/defaultDataset.txt", help= 'Path to the file of network parameters for the game')
+    parser.add_argument('-np', '--networkPath', type= str, default= "../networks/defaultNetwork.txt", help= 'Path to the file of network parameters for the game')
     parser.add_argument('-ep', '--episodes', type= int, default= 1, help= 'Number of games to be played')
     parser.add_argument('-t', '--train', action= 'store_true', help= 'Whether the agents should be training at the end of each game')
     args = parser.parse_args()
