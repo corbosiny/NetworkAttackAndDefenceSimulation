@@ -78,7 +78,7 @@ class Defender(Agent):
         -------
         None
         """
-        pass
+        self.memory.append([message.networkInputs(), suspicionScore])
 
 if __name__ == "__main__":
     defender = Defender()
