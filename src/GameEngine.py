@@ -45,9 +45,8 @@ class GameEngine():
 
     ###  Method functions
     
-    def __init__(self, datasetPath, networkPath, load= False):
+    def __init__(self, datasetPath, networkPath, load= False, epsilon= 1):
         """Class constructor
-
         Parameters
         ----------
         datasetPath
@@ -59,6 +58,9 @@ class GameEngine():
         load
             Boolean describing whether previous models are loaded in for this game or new ones are initialized
             
+        epsilon
+            float from 0 to 1 representing the probability that each player makes random moves 
+
         Returns
         -------
         None
@@ -66,6 +68,7 @@ class GameEngine():
         self.datasetPath = datasetPath
         self.networkPath = networkPath
         self.load = load
+        self.startingEpsilon = epsilon
         self.loadDataSet()
         self.initializeGame()
         self.firstGame = True
@@ -73,7 +76,6 @@ class GameEngine():
     def initializeGame(self):
         """Initializes the starting game state, both players, and loads in the dataset
            Should be called after each game is played to prepare for the next one
-
         Parameters
         ----------
         None
@@ -89,8 +91,8 @@ class GameEngine():
         
         if self.firstGame:
             self.firstGame = False
-            self.attacker = Attacker()
-            self.defender = Defender()
+            self.attacker = Attacker(epsilon= self.startingEpsilon)
+            self.defender = Defender(epsilon= self.startingEpsilon)
             if self.load:
                 self.attacker.loadModel()
                 self.self.defender.loadModel()
@@ -101,7 +103,6 @@ class GameEngine():
         
     def loadDataset(self, datasetPath):
         """loads in the dataset for generating background traffic
-
         Parameters
         ----------
         datasetPath
@@ -115,7 +116,6 @@ class GameEngine():
 
     def initializeNetwork(self, networkPath):
         """loads in the network parameters and creates a networkx graph
-
         Parameters
         ----------
         networkPath
@@ -136,7 +136,6 @@ class GameEngine():
     def runGame(self):
         """Runs through one instance of the game,
            game ends when one player runs out of lives
-
         Parameters
         ----------
         None
@@ -165,7 +164,6 @@ class GameEngine():
     def updateQueue(self):
         """Fills the game queue with a random number of background messages,
            then randomly inserts the attack message into the queue
-
         Parameters
         ----------
         None
@@ -182,8 +180,7 @@ class GameEngine():
             self.queue.append(message)
 
     def generateBackgroundTraffic(self):
-         """
-
+        """Generate a random number of background messages from the dataset
         Parameters
         ----------
         message
@@ -231,12 +228,12 @@ class GameEngine():
 
 
     def displayGraph(self):
+        """Displays the current network colored by past suspicion scores"""
         nx.draw(self.graph, node_color=self.colorMap, with_labels=True)
         plt.show()
 
     def updateScore(self, message, label):
-         """Calculates the reward earned for each player and updates lives
-
+        """Calculates the reward earned for each player and updates lives
         Parameters
         ----------
         message
@@ -268,8 +265,7 @@ class GameEngine():
         return reward
 
     def getSuspicionLabel(self, suspicionScore):
-         """Calculates the reward earned for each player and updates lives
-
+        """Calculates the reward earned for each player and updates live
         Parameters
         ----------
         message
@@ -294,7 +290,6 @@ class GameEngine():
 
     def train(self):
         """starts the training runs for each player
-
         Parameters
         ----------
         None

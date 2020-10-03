@@ -1,9 +1,9 @@
 TODO:
 
-1. Finish network loading code and get plotting working
+1. Write message object and finish generation of background traffic
 
 2. Write code to load in dataset
 
-3. Write message object and finish generation of background traffic
+3. Finish network loading code and get plotting working
 
 4. Get random attacker and defender agents running to test engine
