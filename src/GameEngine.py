@@ -96,7 +96,7 @@ class GameEngine():
             self.defender = Defender(epsilon= self.startingEpsilon)
             if self.load:
                 self.attacker.loadModel()
-                self.self.defender.loadModel()
+                self.defender.loadModel()
         else:
             self.attacker.prepareForNextGame()
             self.defender.prepareForNextGame()
@@ -222,9 +222,6 @@ class GameEngine():
         -------
         None
         """
-        # TODO:
-        # map suspicion score to color
-        # recolor node based off message IP
         self.colorMap[message.origin] = GameEngine.COLOR_MAP[label]
 
 
