@@ -3,6 +3,7 @@ import random
 
 # User defined libraries
 from Agent import Agent
+from Message import Message
 
 class Attacker(Agent):
     """Agent that will generate malicious traffic for the network and try not to be caught"""
@@ -35,9 +36,9 @@ class Attacker(Agent):
                 message object containing meta data about the attack message
         """
         if self.epsilon < Attacker.EPSILON_MIN:
-            pass
+            return Message(['192.168.0.1', Message.MALICIOUS_LABEL])
         else:
-            pass
+            return Message(['192.168.0.1', Message.MALICIOUS_LABEL])
 
     def train(self):
         """Reviews the game memory and runs through one epoch of training for the model

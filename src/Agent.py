@@ -23,10 +23,10 @@ class Agent():
     """Abstract class to take care of all the interfacing with the game engine and model saving/loading, inherited by both players"""
 
     ### Static Class Variables
-    MAX_DATA_LENGTH = 1000                                                                        # Max number of decision frames the Agent can remember from a fight, average is about 2000 per fight
+    MAX_DATA_LENGTH = 1000                                    # Max number of decision frames the Agent can remember from a fight, average is about 2000 per fight
 
-    DEFAULT_MODELS_DIR_PATH = '../local_models'                                                          # Default path to the dir where the trained models are saved for later access
-    DEFAULT_LOGS_DIR_PATH = '../local_logs'                                                              # Default path to the dir where training logs are saved for user review
+    DEFAULT_MODELS_DIR_PATH = '../local_models'               # Default path to the dir where the trained models are saved for later access
+    DEFAULT_LOGS_DIR_PATH = '../local_logs'                   # Default path to the dir where training logs are saved for user review
 
     EPSILON_MIN = 0.1                                         # Minimum exploration rate for a trained model
     DEFAULT_EPSILON_DECAY = 0.999                             # How fast the exploration rate falls as training persists

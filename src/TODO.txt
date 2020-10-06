@@ -1,9 +1,8 @@
 TODO:
 
-1. Write message object and finish generation of background traffic
 
-2. Write code to load in dataset
+1. Debug agent
 
-3. Finish network loading code and get plotting working
+2. attacker and defender
 
-4. Get random attacker and defender agents running to test engine
+3. debug Game engine

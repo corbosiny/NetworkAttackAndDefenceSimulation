@@ -1,24 +1,36 @@
 class Message():
 
+    ### Static class Variables
+
+    # Message label categories
     MALICIOUS_LABEL = "Malicious"
     BENIGN_LABEL = "Benign"
 
-    def __init__(self, origin, label):
+    # Metadata index variables
+    ORIGIN_INDEX = 0
+    LABEL_INDEX = 1
+
+    ### Member functions
+
+    def __init__(self, args):
         """Class constructor
         Parameters
         ----------
-        origin
-            String with the IP address of the originating node
+        args
+            An array containing message metadata organized as follows:
+            
+            origin
+                String with the IP address of the originating node
 
-        label
-            String representing whether the message is malicious or benign
-        
+            label
+                String representing whether the message is malicious or benign
+            
         Returns
         -------
         None
         """
-        self.origin = origin
-        self.label = label
+        self.origin = args[Message.ORIGIN_INDEX]
+        self.label = args[Message.LABEL_INDEX]
 
     def isMalicious(self):
         """Returns a boolean flag stating whether the message is malicious"""
@@ -40,7 +52,8 @@ class Message():
         return [self.origin]
 
 if __name__ == "__main__":
-    message = Message("127.0.0.0.1", Message.MALICIOUS_LABEL)
+    args = ["127.0.0.0.1", Message.MALICIOUS_LABEL]
+    message = Message(args)
     print(message.origin)
     print(message.label)
     print(message.isMalicious())

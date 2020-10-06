@@ -34,7 +34,7 @@ class GameEngine():
     # Thresholds for the suspicion score 
     NO_SUSPICION_CUTOFF     = .1                              # Any messages below this threshold are considered not suspicous                                       
     LOW_SUSPICION_CUTOFF  = .35                               # Any messages inside this threshold are still considered not suspicous but are colored differently
-    MEDIUM_SUSPICION_CUTOFF = .6                              #  Any messages inside this threshold are considered  flagged but not ouright rejected
+    MEDIUM_SUSPICION_CUTOFF = .6                              # Any messages inside this threshold are considered flagged but not ouright rejected
 
     # Colorings for suspicion scores
     NO_SUSPICION_LABEL = 'NONE'
@@ -43,6 +43,10 @@ class GameEngine():
     HIGH_SUSPICION_LABEL = 'HIGH'
 
     COLOR_MAP = {NO_SUSPICION_LABEL  : 'blue'. LOW_SUSPICION_LABEL  : 'yellow', MEDIUM_SUSPICION_LABEL :  'orange', HIGH_SUSPICION_LABEL : 'red'}
+
+    # Indicies for the network file
+    NETWORK_SOURCE_IP_INDEX = 3
+    NETWORK_SINK_IP_INDEX = 5
 
     ###  Method functions
     
@@ -126,13 +130,20 @@ class GameEngine():
         -------
         None
         """
-        self.graph = networkx.graph()
+        self.graph = networkx.DiGraph()
         with open(networkPath, 'r') as file:
             for line in file.readlines():
-                #TODO:
-                # add node to graph
-                # add color map index to be blue
-                self.graph[message.origin] = GameEngine.COLOR_MAP[NO_SUSPICION_LABEL]
+                elems = line.split(',')
+                sourceIP = elems[GameEngine.NETWORK_SOURCE_IP_INDEX]
+                sinkIP = elems[GameEngine.NETWORK_SINK_IP_INDEX]
+                if not self.graph.has_node(sourceIP):
+                    self.graph.add_node(sourceIP)
+                    self.graph[sourceIP] = GameEngine.COLOR_MAP[NO_SUSPICION_LABEL]
+                if not self.graph.has_node(sinkIP):
+                    self.graph.add_node(sinkIP)
+                    self.graph[sinkIP] = GameEngine.COLOR_MAP[NO_SUSPICION_LABEL]
+                
+                self.graph.add_edge(sourceIP, sinkIP)
                 
     def runGame(self):
         """Runs through one instance of the game,
@@ -194,17 +205,11 @@ class GameEngine():
         -------
         None
         """
-        # TODO:
-        # return random number of background traffic messages
-        # make message class
-        # decide on features for message
         numMessages = random.randint(0, GameEngine.MAX+BACKGROUND_TRAFFIC_MESSAGES)
         messages = []
         for i in range(numMessages):
-            #TODO:
-            # make message object
-            # grab random traffic
-            pass
+            row = self.dataset.sample()
+            messages.append(Message(row))
         return messages
 
     def updateGraph(self, message, label):
@@ -304,8 +309,8 @@ class GameEngine():
 if __name__ == "__main__":
     """Runs a specified number of games, training can be turned on via the train flag"""
     parser = argparse.ArgumentParser(description= 'Processes game parameters.')
-    parser.add_argument('-dp', '--dataPath', type= str, default= "../datasets/defaultDataset.txt", help= 'Path to the file of network parameters for the game')
-    parser.add_argument('-np', '--networkPath', type= str, default= "../networks/defaultNetwork.txt", help= 'Path to the file of network parameters for the game')
+    parser.add_argument('-dp', '--dataPath', type= str, default= "../datasets/defaultDataset.csv", help= 'Path to the file of network parameters for the game')
+    parser.add_argument('-np', '--networkPath', type= str, default= "../networks/defaultNetwork.csv", help= 'Path to the file of network parameters for the game')
     parser.add_argument('-ep', '--episodes', type= int, default= 1, help= 'Number of games to be played')
     parser.add_argument('-t', '--train', action= 'store_true', help= 'Whether the agents should be training at the end of each game')
     parser.add_argument('-l', '--load', action= 'store_true', help= 'Whether previous models should be loaded in for this game')
