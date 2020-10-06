@@ -29,11 +29,11 @@ class GameEngine():
 
     ### Static Class Variables
 
-    MAX_BACKGROUND_TRAFFIC_MESSAGES = 5      # The maximum number of background messages between attacks
+    MAX_BACKGROUND_TRAFFIC_MESSAGES = 5                       # The maximum number of background messages between attacks
     
     # Thresholds for the suspicion score 
-    NO_SUSPICION_CUTOFF     = .1                                       # Any messages below this threshold are considered not suspicous                                       
-    LOW_SUSPICION_CUTOFF  = .35                                   # Any messages inside this threshold are still considered not suspicous but are colored differently
+    NO_SUSPICION_CUTOFF     = .1                              # Any messages below this threshold are considered not suspicous                                       
+    LOW_SUSPICION_CUTOFF  = .35                               # Any messages inside this threshold are still considered not suspicous but are colored differently
     MEDIUM_SUSPICION_CUTOFF = .6                              #  Any messages inside this threshold are considered  flagged but not ouright rejected
 
     # Colorings for suspicion scores
