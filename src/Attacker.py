@@ -8,6 +8,7 @@ class Attacker(Agent):
     """Agent that will generate malicious traffic for the network and try not to be caught"""
 
     def __init__(self, epsilon= 1):
+        """Calls super constructor with the specificed epsilon value"""
         super(Attacker, self).__init__(epsilon= epsilon)
 
     def initializeModel(self):

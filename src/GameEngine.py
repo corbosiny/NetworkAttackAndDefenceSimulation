@@ -6,8 +6,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # User defined libraries
-#from Attacker import Attacker
-#from Defender import Defender
+from Attacker import Attacker
+from Defender import Defender
+from Message import Message
 
 class GameEngine():
     """
@@ -153,13 +154,13 @@ class GameEngine():
                 reward = self.updateScore(message, label)
 
                 self.defender.addTrainingPoint(message, suspicionScore, reward)
-                if message.label == "Malicious": self.attacker.addTrainingPoint(message, suspicionScore, -reward)
+                if message.isMalicious(): self.attacker.addTrainingPoint(message, suspicionScore, -reward)
 
             self.displayGraph()
         
     def self.gameOver(self):
         """Returns true if one player is out of lives"""
-        return self.defender.lives == 0 || self.attacker.lives == 0
+        return self.defender.lives == 0 or self.attacker.lives == 0
 
     def updateQueue(self):
         """Fills the game queue with a random number of background messages,
@@ -247,20 +248,20 @@ class GameEngine():
         None
         """
         reward = 0
-        if message.label == "Malicious" and label == GameEngine.HIGH_SUSPICION_LABEL :
+        if message.isMalicious() and label == GameEngine.HIGH_SUSPICION_LABEL :
             self.attacker.lives -= 1
             reward = 10
-        elif message.label == "Malicious" and label == GameEngine.MEDIUM_SUSPICION_LABEL :
+        elif message.isMalicious() and label == GameEngine.MEDIUM_SUSPICION_LABEL :
             reward = 5
-        elif message.label == "Malicious":
+        elif message.isMalicious():
             self.defender.lives -= 1
             reward = -10
-        elif message.label == 'Benign' and label ==  GameEngine.HIGH_SUSPICION_LABEL :
+        elif not message.isMalicious() and label ==  GameEngine.HIGH_SUSPICION_LABEL :
             self.defender.lives -= 1
             reward = -10
-        elif message.label == 'Benign' and label == GameEngine.MEDIUM_SUSPICION_LABEL :
+        elif not message.isMalicious() and label == GameEngine.MEDIUM_SUSPICION_LABEL :
             reward = 0
-        elif message.label == 'Benign':
+        elif not message.isMalicious():
             reward = 10
         return reward
 

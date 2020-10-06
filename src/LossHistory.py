@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings("ignore")
+import tensorflow as tf
 from tensorflow.python import keras
 
 class LossHistory(keras.callbacks.Callback):

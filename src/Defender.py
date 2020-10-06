@@ -38,7 +38,7 @@ class Defender(Agent):
         if random.random() < self.epsilon:
             return randon.random()
         else:
-            #return self.model.predict(message.networkInputs())
+            #return self.model.predict(message.asNetworkInputs())
             return random.random()
 
     def train(self):
@@ -78,7 +78,7 @@ class Defender(Agent):
         -------
         None
         """
-        self.memory.append([message.networkInputs(), suspicionScore])
+        self.memory.append([message.asNetworkInputs(), suspicionScore])
 
 if __name__ == "__main__":
     defender = Defender()

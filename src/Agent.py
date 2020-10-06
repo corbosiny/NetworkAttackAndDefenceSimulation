@@ -1,6 +1,23 @@
-# User defined libraries
+# Python libraries
 from collections import deque
+
+import warnings
+warnings.filterwarnings("ignore")
+
+import os
+
+import tensorflow as tf
+from tensorflow.python import keras
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.optimizers import Adam
+from keras.models import load_model
+from keras import backend as K
+import keras.losses
+
+# User defined libraries
 from LossHistory import LossHistory
+from Message import Message
 
 class Agent():
     """Abstract class to take care of all the interfacing with the game engine and model saving/loading, inherited by both players"""
@@ -21,8 +38,9 @@ class Agent():
         self.name = self.__class__.__name__
         self.epsilon = epsilon
         self.lossHistory = LossHistory()
-        self.initializeModel()
         self.prepareForNextGame()
+        if self.name != "Agent":
+            self.initializeModel()
 
     def prepareForNextGame(self):
         """Wipes the game memory so it can be filled by the next game
@@ -117,4 +135,5 @@ class Agent():
         raise NotImplementedError("Implement this is in the inherited agent")
 
 if __name__ == "__init__":
-    pass
+    agent = Agent()
+    print(agent.epsilon)
