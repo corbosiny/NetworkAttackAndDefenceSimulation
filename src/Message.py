@@ -51,10 +51,18 @@ class Message():
         """
         return [self.origin]
 
+    def __str__(self):
+        """Returns a string of the message metadata when an attempt to turn a message object into a string occurs"""
+        args = self.asNetworkInputs()
+        args.append(self.label)
+        string = ','.join(args)
+        return string
+
 if __name__ == "__main__":
-    args = ["127.0.0.0.1", Message.MALICIOUS_LABEL]
+    args = ["127.0.0.0.1", Message.BENIGN_LABEL]
     message = Message(args)
     print(message.origin)
     print(message.label)
     print(message.isMalicious())
     print(message.asNetworkInputs())
+    print(message)

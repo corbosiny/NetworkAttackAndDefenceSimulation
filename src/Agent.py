@@ -52,6 +52,7 @@ class Agent():
         -------
         None
         """
+        self.score = 0
         self.lives = 10
         self.memory = deque(maxlen= Agent.MAX_DATA_LENGTH)
 
@@ -75,8 +76,11 @@ class Agent():
         """
         self.model.save_weights(os.path.join(Agent.DEFAULT_MODELS_DIR_PATH, self.getModelName()))
         with open(os.path.join(Agent.DEFAULT_LOGS_DIR_PATH, self.getLogsName()), 'a+') as file:
-            file.write(str(sum(self.lossHistory.losses) / len(self.lossHistory.losses)))
-            file.write('\n')
+            try:
+                file.write(str(sum(self.lossHistory.losses) / len(self.lossHistory.losses)))
+                file.write('\n')
+            except:
+                pass # No losses to report yet
 
     def loadModel(self):
         """Loads in pretrained model object ../models/{Class_Name}Model
@@ -134,6 +138,27 @@ class Agent():
         """
         raise NotImplementedError("Implement this is in the inherited agent")
 
-if __name__ == "__init__":
-    agent = Agent()
+if __name__ == "__main__":
+    epsilon = .5
+    agent = Agent(epsilon= epsilon)
     print(agent.epsilon)
+    print(agent.name)
+    print(agent.score)
+    print(agent.lossHistory)
+    print(agent.lives)
+    agent.memory.append(2)
+    print(agent.memory)
+    print(agent.getLogsName())
+    print(agent.getModelName())
+    model = Sequential()
+    model.add(Dense(48, input_dim= 24, activation='relu'))
+    model.add(Dense(96, activation='relu'))
+    model.add(Dense(192, activation='relu'))
+    model.add(Dense(96, activation='relu'))
+    model.add(Dense(48, activation='relu'))
+    model.add(Dense(48, activation='linear'))
+    model.compile(loss= tf.keras.losses.Huber(), optimizer=Adam(lr=Agent.DEFAULT_LEARNING_RATE))
+    agent.model = model
+    agent.lossHistory.on_batch_end('_', {"loss" : 2})
+    agent.saveModel()
+    agent.loadModel()

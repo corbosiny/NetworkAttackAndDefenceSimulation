@@ -19,3 +19,7 @@ class LossHistory(keras.callbacks.Callback):
 
     def losses_clear(self):
         self.losses = []
+
+if __name__ == "__main__":
+    history = LossHistory()
+    print("No exceptions")
