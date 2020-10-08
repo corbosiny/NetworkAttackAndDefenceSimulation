@@ -42,7 +42,7 @@ class GameEngine():
     MEDIUM_SUSPICION_LABEL = 'MEDIUM'
     HIGH_SUSPICION_LABEL = 'HIGH'
 
-    COLOR_MAP = {NO_SUSPICION_LABEL  : 'blue'. LOW_SUSPICION_LABEL  : 'yellow', MEDIUM_SUSPICION_LABEL :  'orange', HIGH_SUSPICION_LABEL : 'red'}
+    COLOR_MAP = {NO_SUSPICION_LABEL  : 'blue', LOW_SUSPICION_LABEL  : 'yellow', MEDIUM_SUSPICION_LABEL :  'orange', HIGH_SUSPICION_LABEL : 'red'}
 
     # Indicies for the network file
     NETWORK_SOURCE_IP_INDEX = 3
@@ -50,7 +50,7 @@ class GameEngine():
 
     ###  Method functions
     
-    def __init__(self, datasetPath, networkPath, load= False, epsilon= 1):
+    def __init__(self, datasetPath, networkPath, loadModels= False, epsilon= 1):
         """Class constructor
         Parameters
         ----------
@@ -60,7 +60,7 @@ class GameEngine():
         networkPath
             String representing the file path to the network parameters file
 
-        load
+        loadModels
             Boolean describing whether previous models are loaded in for this game or new ones are initialized
             
         epsilon
@@ -72,7 +72,7 @@ class GameEngine():
         """
         self.datasetPath = datasetPath
         self.networkPath = networkPath
-        self.load = load
+        self.loadModels = loadModels
         self.startingEpsilon = epsilon
         self.loadDataSet()
         self.initializeGame()
@@ -98,7 +98,7 @@ class GameEngine():
             self.firstGame = False
             self.attacker = Attacker(epsilon= self.startingEpsilon)
             self.defender = Defender(epsilon= self.startingEpsilon)
-            if self.load:
+            if self.loadModels:
                 self.attacker.loadModel()
                 self.defender.loadModel()
         else:
@@ -169,7 +169,7 @@ class GameEngine():
 
             self.displayGraph()
         
-    def self.gameOver(self):
+    def gameOver(self):
         """Returns true if one player is out of lives"""
         return self.defender.lives == 0 or self.attacker.lives == 0
 
@@ -284,7 +284,7 @@ class GameEngine():
         label = GameEngine.NO_SUSPICION_LABEL 
         if suspicionScore > GameEngine.NO_SUSPICION_SCORE and suspicionScore <= GameEngine.LOW_SUSPICION_CUTOFF:
             label = GameEngine.LOW_SUSPICION_LABEL 
-        elif suspicionScore > GameEngine.LOW_SUSPICION_SCORE and suspicionScore <= GameEngine.MEDIUM_SUSPICION_CUTOFF 
+        elif suspicionScore > GameEngine.LOW_SUSPICION_SCORE and suspicionScore <= GameEngine.MEDIUM_SUSPICION_CUTOFF:
             label = GameEngine.MEDIUM_SUSPICION_LABEL 
         elif  suspicionScore > GameEngine.MEDIUM_SUSPICION_CUTOFF:
             label = GameEngine.HIGH_SUSPICION_LABEL 
