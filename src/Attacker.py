@@ -43,9 +43,9 @@ class Attacker(Agent):
                 message object containing meta data about the attack message
         """
         if random.random() < self.epsilon:
-            return Message(['192.168.0.1', Message.MALICIOUS_LABEL])
+            return Message(['','','', "127.0.0.0.1", '', '', '', '', '', '', '', '','','', Message.MALICIOUS_LABEL])
         else:
-            return Message(['192.168.0.1', Message.MALICIOUS_LABEL])
+            return Message(['','','', "127.0.0.0.1", '', '', '', '', '', '', '', '','','', Message.MALICIOUS_LABEL])
 
     def train(self):
         """Reviews the game memory and runs through one epoch of training for the model
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     print(attacker.lives)
     print(attacker.model)
 
-    args = ["127.0.0.0.1", Message.BENIGN_LABEL]
+    args = ['','','', "127.0.0.0.1", '', '', '', '', '', '', '', '','','', Message.BENIGN_LABEL]
     message = Message(args)
     print(attacker.addTrainingPoint(message, .5, 10))
     print(attacker.score)

@@ -7,8 +7,8 @@ class Message():
     BENIGN_LABEL = "Benign"
 
     # Metadata index variables
-    ORIGIN_INDEX = 0
-    LABEL_INDEX = 1
+    ORIGIN_INDEX = 3
+    LABEL_INDEX = 14
 
     ### Member functions
 
@@ -59,7 +59,7 @@ class Message():
         return string
 
 if __name__ == "__main__":
-    args = ["127.0.0.0.1", Message.BENIGN_LABEL]
+    args = ['','','', "127.0.0.0.1", '', '', '', '', '', '', '', '','','', Message.BENIGN_LABEL]
     message = Message(args)
     print(message.origin)
     print(message.label)

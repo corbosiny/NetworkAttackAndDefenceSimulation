@@ -105,7 +105,7 @@ if __name__ == "__main__":
     print(defender.lives)
     print(defender.model)
 
-    args = ["127.0.0.0.1", Message.BENIGN_LABEL]
+    args = ['','','', "127.0.0.0.1", '', '', '', '', '', '', '', '','','', Message.BENIGN_LABEL]
     message = Message(args)
     print(defender.addTrainingPoint(message, .5, 10))
     print(defender.score)

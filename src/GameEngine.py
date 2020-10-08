@@ -4,6 +4,7 @@ import networkx
 import random
 import pandas as pd
 import matplotlib.pyplot as plt
+import time
 
 # User defined libraries
 from Attacker import Attacker
@@ -70,13 +71,12 @@ class GameEngine():
         -------
         None
         """
+        self.firstGame = True
         self.datasetPath = datasetPath
         self.networkPath = networkPath
         self.loadModels = loadModels
         self.startingEpsilon = epsilon
-        self.loadDataSet()
         self.initializeGame()
-        self.firstGame = True
 
     def initializeGame(self):
         """Initializes the starting game state, both players, and loads in the dataset
@@ -90,8 +90,8 @@ class GameEngine():
         None
         """
         self.queue = []
-        self.turnHistory = []
-        self.loadDataset
+        self.colorMap = {}
+        self.loadDataset(self.datasetPath)
         self.initializeNetwork(self.networkPath)
         
         if self.firstGame:
@@ -138,10 +138,10 @@ class GameEngine():
                 sinkIP = elems[GameEngine.NETWORK_SINK_IP_INDEX]
                 if not self.graph.has_node(sourceIP):
                     self.graph.add_node(sourceIP)
-                    self.graph[sourceIP] = GameEngine.COLOR_MAP[NO_SUSPICION_LABEL]
+                    self.graph[sourceIP] = GameEngine.COLOR_MAP[GameEngine.NO_SUSPICION_LABEL]
                 if not self.graph.has_node(sinkIP):
                     self.graph.add_node(sinkIP)
-                    self.graph[sinkIP] = GameEngine.COLOR_MAP[NO_SUSPICION_LABEL]
+                    self.graph[sinkIP] = GameEngine.COLOR_MAP[GameEngine.NO_SUSPICION_LABEL]
                 
                 self.graph.add_edge(sourceIP, sinkIP)
                 
@@ -205,9 +205,9 @@ class GameEngine():
         -------
         None
         """
-        numMessages = random.randint(0, GameEngine.MAX+BACKGROUND_TRAFFIC_MESSAGES)
+        numMessages = random.randint(0, GameEngine.MAX_BACKGROUND_TRAFFIC_MESSAGES)
         messages = []
-        for i in range(numMessages):
+        for _ in range(numMessages):
             row = self.dataset.sample()
             messages.append(Message(row))
         return messages
@@ -232,7 +232,7 @@ class GameEngine():
 
     def displayGraph(self):
         """Displays the current network colored by past suspicion scores"""
-        nx.draw(self.graph, node_color=self.colorMap, with_labels=True)
+        networkx.draw(self.graph, node_color= self.colorMap, with_labels=True)
         plt.show()
 
     def updateScore(self, message, label):
@@ -250,21 +250,22 @@ class GameEngine():
         None
         """
         reward = 0
-        if message.isMalicious() and label == GameEngine.HIGH_SUSPICION_LABEL :
+        if message.isMalicious() and label == GameEngine.HIGH_SUSPICION_LABEL:
             self.attacker.lives -= 1
             reward = 10
-        elif message.isMalicious() and label == GameEngine.MEDIUM_SUSPICION_LABEL :
+        elif message.isMalicious() and label == GameEngine.MEDIUM_SUSPICION_LABEL:
             reward = 5
         elif message.isMalicious():
             self.defender.lives -= 1
             reward = -10
-        elif not message.isMalicious() and label ==  GameEngine.HIGH_SUSPICION_LABEL :
+        elif not message.isMalicious() and label ==  GameEngine.HIGH_SUSPICION_LABEL:
             self.defender.lives -= 1
             reward = -10
-        elif not message.isMalicious() and label == GameEngine.MEDIUM_SUSPICION_LABEL :
+        elif not message.isMalicious() and label == GameEngine.MEDIUM_SUSPICION_LABEL:
             reward = 0
         elif not message.isMalicious():
             reward = 10
+
         return reward
 
     def getSuspicionLabel(self, suspicionScore):
@@ -282,11 +283,11 @@ class GameEngine():
         None
         """
         label = GameEngine.NO_SUSPICION_LABEL 
-        if suspicionScore > GameEngine.NO_SUSPICION_SCORE and suspicionScore <= GameEngine.LOW_SUSPICION_CUTOFF:
+        if suspicionScore > GameEngine.NO_SUSPICION_CUTOFF and suspicionScore <= GameEngine.LOW_SUSPICION_CUTOFF:
             label = GameEngine.LOW_SUSPICION_LABEL 
-        elif suspicionScore > GameEngine.LOW_SUSPICION_SCORE and suspicionScore <= GameEngine.MEDIUM_SUSPICION_CUTOFF:
+        elif suspicionScore > GameEngine.LOW_SUSPICION_CUTOFF and suspicionScore <= GameEngine.MEDIUM_SUSPICION_CUTOFF:
             label = GameEngine.MEDIUM_SUSPICION_LABEL 
-        elif  suspicionScore > GameEngine.MEDIUM_SUSPICION_CUTOFF:
+        elif suspicionScore > GameEngine.MEDIUM_SUSPICION_CUTOFF:
             label = GameEngine.HIGH_SUSPICION_LABEL 
         
         return label
@@ -316,7 +317,7 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--load', action= 'store_true', help= 'Whether previous models should be loaded in for this game')
     args = parser.parse_args()
 
-    engine = GameEngine(datasetPath= args.dataPath, networkPath= args.networkPath, load= args.load)
+    engine = GameEngine(datasetPath= args.dataPath, networkPath= args.networkPath, loadModels= args.load)
 
     for episode in range(args.episodes):
         print('Starting episode', episode)
