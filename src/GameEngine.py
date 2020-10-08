@@ -43,11 +43,13 @@ class GameEngine():
     MEDIUM_SUSPICION_LABEL = 'MEDIUM'
     HIGH_SUSPICION_LABEL = 'HIGH'
 
-    COLOR_MAP = {NO_SUSPICION_LABEL  : 'blue', LOW_SUSPICION_LABEL  : 'yellow', MEDIUM_SUSPICION_LABEL :  'orange', HIGH_SUSPICION_LABEL : 'red'}
+    COLOR_MAP = {NO_SUSPICION_LABEL  : 'blue', LOW_SUSPICION_LABEL  : 'cyan', MEDIUM_SUSPICION_LABEL :  'orange', HIGH_SUSPICION_LABEL : 'red'}
+
+    GRAPH_DELAY = 1                                           # Time delay in seconds between graph updates
 
     # Indicies for the network file
-    NETWORK_SOURCE_IP_INDEX = 3
-    NETWORK_SINK_IP_INDEX = 5
+    NETWORK_SOURCE_IP_INDEX = 0
+    NETWORK_SINK_IP_INDEX = 1
 
     ###  Method functions
     
@@ -130,18 +132,19 @@ class GameEngine():
         -------
         None
         """
+        plt.ion()
         self.graph = networkx.DiGraph()
         with open(networkPath, 'r') as file:
             for line in file.readlines():
                 elems = line.split(',')
-                sourceIP = elems[GameEngine.NETWORK_SOURCE_IP_INDEX]
-                sinkIP = elems[GameEngine.NETWORK_SINK_IP_INDEX]
+                sourceIP = elems[GameEngine.NETWORK_SOURCE_IP_INDEX].strip()
+                sinkIP = elems[GameEngine.NETWORK_SINK_IP_INDEX].strip()
                 if not self.graph.has_node(sourceIP):
                     self.graph.add_node(sourceIP)
-                    self.graph[sourceIP] = GameEngine.COLOR_MAP[GameEngine.NO_SUSPICION_LABEL]
+                    self.colorMap[sourceIP] = GameEngine.COLOR_MAP[GameEngine.NO_SUSPICION_LABEL]
                 if not self.graph.has_node(sinkIP):
                     self.graph.add_node(sinkIP)
-                    self.graph[sinkIP] = GameEngine.COLOR_MAP[GameEngine.NO_SUSPICION_LABEL]
+                    self.colorMap[sinkIP] = GameEngine.COLOR_MAP[GameEngine.NO_SUSPICION_LABEL]
                 
                 self.graph.add_edge(sourceIP, sinkIP)
                 
@@ -158,7 +161,8 @@ class GameEngine():
         """
         while not self.gameOver():
             self.updateQueue()
-            for message in self.queue:
+            while len(self.queue) > 0:
+                message = self.queue.pop()
                 suspicionScore = self.defender.inspect(message)
                 label = self.getSuspicionLabel(suspicionScore)
                 self.updateGraph(message, label)
@@ -167,8 +171,16 @@ class GameEngine():
                 self.defender.addTrainingPoint(message, suspicionScore, reward)
                 if message.isMalicious(): self.attacker.addTrainingPoint(message, suspicionScore, -reward)
 
-            self.displayGraph()
+                print('Current message', message, 'was given a suspicion score of:', suspicionScore)
+                self.displayGraph()
+
+                if self.gameOver(): break
         
+        if self.attacker.lives == 0: 
+            print('The Defender has won this episode')
+        else:
+            print('The Attacker has won this episode')
+
     def gameOver(self):
         """Returns true if one player is out of lives"""
         return self.defender.lives == 0 or self.attacker.lives == 0
@@ -185,9 +197,9 @@ class GameEngine():
         None
         """
         messages = self.generateBackgroundTraffic()
-        attack = self.attacker.getAttack()
+        attack = self.attacker.getAttack(self.graph.nodes())
         position = random.randint(0, len(messages) + 1)
-        messages.insert(attack, position)
+        messages.insert(position, attack)
         for message in messages:
             self.queue.append(message)
 
@@ -205,10 +217,14 @@ class GameEngine():
         -------
         None
         """
-        numMessages = random.randint(0, GameEngine.MAX_BACKGROUND_TRAFFIC_MESSAGES)
         messages = []
-        for _ in range(numMessages):
-            row = self.dataset.sample()
+        numMessages = random.randint(1, GameEngine.MAX_BACKGROUND_TRAFFIC_MESSAGES)
+        rowIndices = [random.randint(1, len(self.dataset.index) - 1) for _ in range(numMessages)]
+        rows = [list(self.dataset.iloc[index]) for index in rowIndices]
+        for row in rows:            
+            nodes = [node for node in self.graph.nodes()]
+            newOrigin = random.choice(nodes) # Take out in final version?
+            row[Message.ORIGIN_INDEX] = newOrigin
             messages.append(Message(row))
         return messages
 
@@ -232,8 +248,9 @@ class GameEngine():
 
     def displayGraph(self):
         """Displays the current network colored by past suspicion scores"""
-        networkx.draw(self.graph, node_color= self.colorMap, with_labels=True)
+        networkx.draw_circular(self.graph, node_color= self.colorMap.values(), with_labels=True)
         plt.show()
+        plt.pause(GameEngine.GRAPH_DELAY)
 
     def updateScore(self, message, label):
         """Calculates the reward earned for each player and updates lives

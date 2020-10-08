@@ -31,11 +31,12 @@ class Attacker(Agent):
         """
         self.model = None
 
-    def getAttack(self):
+    def getAttack(self, nodes):
         """Initializes the model of the agent
         Parameters
         ----------
-        TBD
+        nodes
+            List of all the node IPs in the network
 
         Returns
         -------
@@ -43,9 +44,11 @@ class Attacker(Agent):
                 message object containing meta data about the attack message
         """
         if random.random() < self.epsilon:
-            return Message(['','','', "127.0.0.0.1", '', '', '', '', '', '', '', '','','', Message.MALICIOUS_LABEL])
+            origin = random.sample(nodes, 1)[0]
+            return Message(['','','', origin, '', '', '', '', '', '', '', '','','', Message.MALICIOUS_LABEL])
         else:
-            return Message(['','','', "127.0.0.0.1", '', '', '', '', '', '', '', '','','', Message.MALICIOUS_LABEL])
+            origin = random.sample(nodes, 1)[0]
+            return Message(['','','', origin, '', '', '', '', '', '', '', '','','', Message.MALICIOUS_LABEL])
 
     def train(self):
         """Reviews the game memory and runs through one epoch of training for the model
@@ -106,19 +109,4 @@ if __name__ == "__main__":
     print(attacker.getModelName())
     print(attacker.train())
     print(attacker.epsilon)
-
-    for i in range(5):
-        print(attacker.getAttack())
     
-    model = Sequential()
-    model.add(Dense(48, input_dim= 24, activation='relu'))
-    model.add(Dense(96, activation='relu'))
-    model.add(Dense(192, activation='relu'))
-    model.add(Dense(96, activation='relu'))
-    model.add(Dense(48, activation='relu'))
-    model.add(Dense(48, activation='linear'))
-    model.compile(loss= tf.keras.losses.Huber(), optimizer=Adam(lr=Agent.DEFAULT_LEARNING_RATE))
-    attacker.model = model
-
-    attacker.saveModel()
-    attacker.loadModel()
