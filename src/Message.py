@@ -8,6 +8,7 @@ class Message():
 
     # Metadata index variables
     ORIGIN_INDEX = 3
+    DESTINATION_INDEX = 6
     LABEL_INDEX = 14
 
     ### Member functions
@@ -22,6 +23,9 @@ class Message():
             origin
                 String with the IP address of the originating node
 
+            destination
+                String with the IP address of the destination node
+
             label
                 String representing whether the message is malicious or benign
             
@@ -30,6 +34,7 @@ class Message():
         None
         """
         self.origin = args[Message.ORIGIN_INDEX]
+        self.destination = args[Message.DESTINATION_INDEX]
         self.label = args[Message.LABEL_INDEX]
 
     def isMalicious(self):
@@ -47,9 +52,12 @@ class Message():
         Metadata array containing these elements:
             origin
                 String with the IP address of the originating node
+            
+            destination
+                String with the IP address of the destination node
 
         """
-        return [self.origin]
+        return [self.origin, self.destination]
 
     def __str__(self):
         """Returns a string of the message metadata when an attempt to turn a message object into a string occurs"""

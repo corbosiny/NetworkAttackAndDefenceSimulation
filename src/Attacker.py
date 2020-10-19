@@ -12,12 +12,39 @@ class Attacker(Agent):
     ### Static class variables
     
     # Network model size constants
-    INPUT_SIZE = 1
-    OUTPUT_SIZE = 1
+    INPUT_SIZE = 20 * 3
+    OUTPUT_SIZE = INPUT_SIZE + 1
 
-    def __init__(self, epsilon= 1):
-        """Calls super constructor with the specificed epsilon value"""
-        super(Attacker, self).__init__(epsilon= epsilon)
+    def __init__(self, datasetPath, epsilon= 1):
+        """Constructor for Attacker agent
+        Parameters
+        ----------
+        datasetPath
+            String representing the file path to the dataset used for attack messages
+
+        epsilon
+            Float value representing the starting chance the agent makes random moves while training
+
+        Returns
+        -------
+        None      
+        """
+        self.datasetPath = datasetPath
+        self.loadDataset(datasetPath)
+        super(Attacker, self).__init__(epsilon= epsilon) # Calling parent constructor
+
+    def loadDataset(self, datasetPath):
+        """loads in the dataset for generating background traffic
+        Parameters
+        ----------
+        datasetPath
+            String representing the file path to the dataset used for attack messages
+        
+        Returns
+        -------
+        None
+        """
+        self.dataset = pd.read_csv(datasetPath)
 
     def initializeModel(self):
         """Initializes the model of the agent, must set self.outputSize of model
@@ -31,24 +58,94 @@ class Attacker(Agent):
         """
         self.model = None
 
-    def getAttack(self, nodes):
+    def getAttack(self, trafficFlow, reachableNodes, infectionScores, infectedNodes, graph):
         """Initializes the model of the agent
         Parameters
         ----------
-        nodes
-            List of all the node IPs in the network
+        trafficFlow
+            The number of messages going to each node in the network this round
+        
+        reachable
+            Binary array with 1 representing a node reachable by the infected network
+        
+        infectionScores
+            Reward score for infecting each node in the network
+        
+        infectedNodes
+            List of the IPs of the infected nodes in the graph
+
+        graph
+            networkx graph of the current state of the network
 
         Returns
         -------
-            message
-                message object containing meta data about the attack message
+        message
+            message object containing meta data about the attack message
         """
         if random.random() < self.epsilon:
-            origin = random.sample(nodes, 1)[0]
+            origin = random.sample(graph.nodes(), 1)[0]
             return Message(['','','', origin, '', '', '', '', '', '', '', '','','', Message.MALICIOUS_LABEL])
+            #reachableNodeIPs = [graph.nodes()[index] for enumerate(index, reachable) in reachableNodes if reachable]
+            #destination = random.choice(reachableNodeIPs)
         else:
-            origin = random.sample(nodes, 1)[0]
-            return Message(['','','', origin, '', '', '', '', '', '', '', '','','', Message.MALICIOUS_LABEL])
+            #modelOutput = self.model.predict(attackerInputs)[0]
+            #modelOutput = [reachable * score for reachable,score in list(zip(reachable, modelOutput))]
+            #destinationIndex = np.argmax(modelOutput)
+            #if destinationIndex == OUTPUT_SIZE - 1: return None
+            #destination = graph.nodes()[destinationIndex]
+            origin = random.sample(graph.nodes(), 1)[0]
+            return Message(['','','', origin, '', '', '', '', '', '', '', '', '','','', Message.MALICIOUS_LABEL])
+        #origin = self.findAttackPath(destination, infectedNodes, graph)
+        #message = self.getRandomAttackMessage(origin, destination)
+        #return message
+
+    def findAttackPath(self, destination, infectedNodes, graph):
+        """Finds the infected node that can attack the reachable node
+        Parameters
+        ----------
+        destination
+            IP of the desired node to attack
+
+        infectedNodes
+            List of the IPs of the infected nodes in the graph
+
+        graph
+            networkx graph of the current state of the network
+
+        Returns
+        -------
+        origin
+            IP of the infected node to launch the attack from
+        """
+        origin = None
+        for node in infectedNodes:
+           if graph.has_edge(node, destination):
+               origin = node
+               break
+        return origin
+
+    def getRandomAttackMessage(self, origin, destination):
+        """Gets a random malicious message from the dataset
+           Then reworks the origin and destination to fit the current network
+        Parameters
+        ----------
+        origin
+            IP of the infected node to launch the attack from
+
+        destination
+            IP of the desired node to attack
+
+        Returns
+        -------
+        message
+            Message object containing metadata of the attack message
+        """
+        index = random.randint(1, len(self.dataset.index))
+        row = self.dataset.iloc[index]
+        row[Message.ORIGIN_INDEX] = origin
+        row[Message.DESTINATION_INDEX] = destination
+        message = Message(row)
+        return message
 
     def train(self):
         """Reviews the game memory and runs through one epoch of training for the model
@@ -62,23 +159,23 @@ class Attacker(Agent):
         """
         minibatch = random.sample(self.memory, len(self.memory))
         self.lossHistory.losses_clear()
-        for messageInputs, truth, in minibatch:     
-            modelOutput = truth
+        for attackerInputs, reward, in minibatch:     
+            modelOutput = reward
+            #modelOutput = self.model.predict(attackerInpuits)[0]
+            #for index, output in enumerate(modelOutput):
+            #   if reachableNodes[index] == 0: modelOutput[index] = 0
             modelOutput = np.reshape(modelOutput, [1, Attacker.OUTPUT_SIZE])
-            #self.model.fit(messageInputs, modelOutput, epochs= 1, verbose= 0, callbacks= [self.lossHistory])
+            #self.model.fit(attackerInputs, modelOutput, epochs= 1, verbose= 0, callbacks= [self.lossHistory])
 
         if self.epsilon > Agent.EPSILON_MIN: self.epsilon *= Agent.DEFAULT_EPSILON_DECAY
 
-    def addTrainingPoint(self, message, suspicionScore, reward):
+    def addTrainingPoint(self, attackerInputs, reward):
         """Adds one training point to the agents memory to review after the game
         
         Parameters
         ----------
-            message
-                 message object containing message meta data
-
-            suspicionScore
-                0 to 1 float value determining how suspicous the defender found the message
+            attackerInputs
+                 An array containing the set of reachable nodes and the reward for infecting each of those nodes
 
             reward
                 the integer reward for the current state action sequence
@@ -88,7 +185,7 @@ class Attacker(Agent):
         None
         """
         self.score += reward
-        self.memory.append([message.asNetworkInputs(), suspicionScore])
+        self.memory.append([attackerInputs, reward])
 
 if __name__ == "__main__":
     epsilon = 0

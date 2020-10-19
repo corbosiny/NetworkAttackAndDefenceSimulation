@@ -53,7 +53,6 @@ class Agent():
         None
         """
         self.score = 0
-        self.lives = 10
         self.memory = deque(maxlen= Agent.MAX_DATA_LENGTH)
 
     def getModelName(self):
