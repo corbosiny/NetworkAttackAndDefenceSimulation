@@ -37,4 +37,5 @@ Debug checklist:
 - Attacker -- Done
 - Game Engine
 
-- m3 scalability?? - Discuss later, start with 50 nodes
+- m3 problems facing scalability:
+

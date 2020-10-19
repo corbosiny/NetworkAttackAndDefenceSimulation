@@ -35,6 +35,7 @@ class Agent():
 
     ### Instance Functions
     def __init__(self, epsilon= 1):
+        """Constructor"""
         self.name = self.__class__.__name__
         self.epsilon = epsilon
         self.lossHistory = LossHistory()
@@ -90,6 +91,7 @@ class Agent():
         -------
         None
         """
+        print('Model successfully loaded')
         self.model.load_weights(os.path.join(Agent.DEFAULT_MODELS_DIR_PATH, self.getModelName()))
 
     ### Abstract methods for the child Agent to implement

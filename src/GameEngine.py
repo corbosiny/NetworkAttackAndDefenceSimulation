@@ -30,8 +30,7 @@ class GameEngine():
     """
 
     ### Static Class Variables
-
-    MAX_BACKGROUND_TRAFFIC_MESSAGES = 20                      # The maximum number of background messages between attacks
+    MAX_BACKGROUND_TRAFFIC_MESSAGES = 5                      # The maximum number of background messages between attacks
 
     COLOR_MAP = {Defender.NO_SUSPICION_LABEL  : 'blue', Defender.LOW_SUSPICION_LABEL  : 'yellow', Defender.MEDIUM_SUSPICION_LABEL :  'orange', Defender.HIGH_SUSPICION_LABEL : 'red'}
     NOT_INFECTED_MARKER = 'o'                                 # Non-infected nodes show up as circles
@@ -140,13 +139,10 @@ class GameEngine():
                 if not self.graph.has_node(sinkIP):
                     self.graph.add_node(sinkIP)
                     self.colorMap[sinkIP] = GameEngine.COLOR_MAP[Defender.NO_SUSPICION_LABEL]
-                    self.
                 self.graph.add_edge(sourceIP, sinkIP)
 
         allNodes = [node for node in self.graph.nodes()]
         self.infectedNodes = random.sample(allNodes, 1)
-        self.shapeMap = {node : NOT_INFECTED_MARKER for node in allNodes}
-        self.shapeMap[self.infectedNodes[0]] = INFECTED_MARKER
         self.reachableNodes = [int(self.isReachable(node)) for node in allNodes]
         self.quarantinedNodes = []
 
@@ -162,21 +158,25 @@ class GameEngine():
         None
         """
         while not self.gameOver():
-           organizedQueues, trafficInfo, attckIndex = self.generateTrafficQueues()
+           organizedQueues, trafficInfo, attackIndex = self.generateTrafficQueues()
+           for queue in organizedQueues.values():
+               for message in queue:
+                   if not self.graph.has_edge(message.origin, message.destination): continue
 
-            for queue in organizedQueues.values():
-                for message in queue:
-                    if random.random < self.calculateInspectionChance(len(queue)): continue            
-                    suspicionLabel = self.defender.inspect(message)
+                   if random.random() > self.calculateInspectionChance(len(queue)): 
+                       print('Current message', message, ' was skipped inspection')
+                       suspicionLabel = Defender.LOW_SUSPICION_LABEL
+                   else:
+                       suspicionLabel = self.defender.inspect(message)
 
-                    self.updateNetwork(message, suspicionLabel)
-                    reward = self.updateScore(message, suspicionLabel)
+                   self.updateNetwork(message, suspicionLabel)
+                   reward = self.calculateScore(message, suspicionLabel)
 
-                    self.defender.addTrainingPoint(message, suspicionLabel, reward)
-                    if message.isMalicious(): self.attacker.addTrainingPoint(trafficInfo, attackIndex, -reward)
+                   self.defender.addTrainingPoint(message, suspicionLabel, reward)
+                   if message.isMalicious(): self.attacker.addTrainingPoint(trafficInfo, attackIndex, -reward)
 
-                    print('Current message', message, ' was given a suspicion score of:', suspicionScore)
-                    self.displayGraph()
+                   print('Current message', message, ' was given a suspicion label of:', suspicionLabel)
+                   self.displayGraph()
 
     def gameOver(self):
         """Returns true if one player is out of lives"""
@@ -202,12 +202,15 @@ class GameEngine():
         """
         self.traffic = self.generateBackgroundTraffic()
         organizedQueues = {node : [message for message in self.traffic if message.destination == node] for node in self.graph.nodes()}
-        nodeInformation = [[len(organizedQueues[node]), node in self.reachableNodes, self.calculateNodeInfectionReward(node)] for node in self.graph.nodes()]
+        
+        nodeInformation = [[len(organizedQueues[node]), self.isReachable(node), self.calculateNodeInfectionReward(node)] for node in self.graph.nodes()]
         trafficFlow, reachable, infectionScores = list(zip(*nodeInformation))
+        
         attackMessage, attackIndex = self.attacker.getAttack(trafficFlow, reachable, infectionScores, self.infectedNodes, self.graph)
         if attackMessage != None:
-            position = random.randint(0, len(organizedQueues[attack.destination]) + 1)
+            position = random.randint(0, len(organizedQueues[attackMessage.destination]) + 1)
             organizedQueues[attackMessage.destination].insert(position, attackMessage)
+            
         trafficInfo = (trafficFlow + reachable + infectionScores)
         return organizedQueues, trafficInfo, attackIndex
 
@@ -228,8 +231,12 @@ class GameEngine():
         rows = [list(self.dataset.iloc[index]) for index in rowIndices]
         for row in rows:            
             nodes = [node for node in self.graph.nodes()]
-            row[Message.ORIGIN_INDEX] = random.choice(nodes)
-            row[Message.DESTINATION_INDEX] = random.choice([node for node in nodes if self.graph.has_edge(newOrigin, node)])    # Pick destination as random node that it has a connection with
+            newOrigin = random.choice(nodes)
+            row[Message.ORIGIN_INDEX] = newOrigin
+            try:
+                row[Message.DESTINATION_INDEX] = random.choice([node for node in nodes if self.graph.has_edge(newOrigin, node)])    # Pick destination as random node that it has a connection with
+            except: 
+                continue
             messages.append(Message(row))
         return messages
 
@@ -254,10 +261,9 @@ class GameEngine():
         None
         """
         self.colorMap[message.origin] = GameEngine.COLOR_MAP[label]
-        if label == Defender.HIGH_SUSPICION_LABEL or Defender.MEDIUM_SUSPICION_LABEL:
+        if label == Defender.HIGH_SUSPICION_LABEL or label == Defender.MEDIUM_SUSPICION_LABEL:
             self.quarantineNode(message.origin, message.destination, label)
-
-        if message.isMalicious() and (label != Defender.HIGH_SUSPICION_LABEL, label != Defender.MEDIUM_SUSPICION_LABEL):
+        elif message.isMalicious():
             self.infectNode(message.destination)
 
         self.reachableNodes = [int(self.isReachable(node)) for node in self.graph.nodes()]
@@ -280,10 +286,10 @@ class GameEngine():
         -------
         None
         """
-        if origin not in self.quarantinedNodes and label == Defender.HIGH_SUSPICION_LABEL:
-             self.quarantinedNodes.append(origin)
-             for node in self.graph.nodes(): 
-                 if self.graph.has_edge(origin, node): self.graph.remove_edge(node)
+        if label == Defender.HIGH_SUSPICION_LABEL:
+            if origin not in self.quarantinedNodes: self.quarantinedNodes.append(origin)
+            for node in self.graph.nodes(): 
+                if self.graph.has_edge(origin, node): self.graph.remove_edge(origin, node)
         else:
             self.graph.remove_edge(origin, destination)
     
@@ -301,7 +307,6 @@ class GameEngine():
         """
         if destination not in self.infectedNodes:
             self.infectedNodes.append(destination)
-            self.shapeMap[destination] = INFECTED_MARKER 
 
     def calculateNodeInfectionReward(self, node):
         """Calculates reward for infecting the specified node
@@ -318,7 +323,7 @@ class GameEngine():
         if node in self.infectedNodes: return 0 # No reward if currently impossible to infect
         score = 1
         for destination in self.graph.nodes():
-            if graph.has_edge(node, destination) and destination not in self.infectedNodes:
+            if self.graph.has_edge(node, destination) and destination not in self.infectedNodes:
                 score += 1
         return score
 
@@ -337,7 +342,7 @@ class GameEngine():
         if node in self.infectedNodes:
             return False
 
-        for infectedNode in infectedNodes:
+        for infectedNode in self.infectedNodes:
             if self.graph.has_edge(infectedNode, node):
                 return True
 
@@ -346,11 +351,16 @@ class GameEngine():
     def displayGraph(self):
         """Displays the current network colored by past suspicion scores"""
 
-        networkx.draw_circular(self.graph, node_shape= self.shapeMap.values(), node_color= self.colorMap.values(), with_labels=True)
+        notInfectedNodes = [node for node in self.graph.nodes() if node not in self.infectedNodes]
+        infectedColorMap = [self.colorMap[node] for node in self.infectedNodes]
+        notInfectedColorMap = [self.colorMap[node] for node in notInfectedNodes]
+        networkx.draw_circular(self.graph, nodelist= self.infectedNodes, node_shape= GameEngine.INFECTED_MARKER, node_color = infectedColorMap, with_labels= True)
+        networkx.draw_circular(self.graph, nodelist= notInfectedNodes, node_shape= GameEngine.NOT_INFECTED_MARKER, node_color= notInfectedColorMap, with_labels=True)
         plt.show()
         plt.pause(GameEngine.GRAPH_DELAY)
+        plt.clf()
 
-    def updateScore(self, message, label):
+    def calculateScore(self, message, label):
         """Calculates the reward earned for each player and updates lives
         Parameters
         ----------
@@ -362,47 +372,24 @@ class GameEngine():
         
         Returns
         -------
-        None
+        score
+            The score earned by the agents for this interaction
         """
         possibleReward = self.calculateNodeInfectionReward(message.destination)
         if message.isMalicious() and label == Defender.HIGH_SUSPICION_LABEL:
             return possibleReward
         elif message.isMalicious() and label == Defender.MEDIUM_SUSPICION_LABEL:
-            reward = possibleReward / 2
+            return possibleReward / 2
         elif message.isMalicious():
-            reward = -possibleReward
+            return -possibleReward
         elif not message.isMalicious() and label ==  Defender.HIGH_SUSPICION_LABEL:
-            reward = -possibleReward
+            return -possibleReward
         elif not message.isMalicious() and label == Defender.MEDIUM_SUSPICION_LABEL:
-            reward = -possibleReward / 2
+            return -possibleReward / 2
         elif not message.isMalicious():
-            reward = possibleReward
+            return possibleReward
         else:
             return 0
-
-    def getSuspicionLabel(self, suspicionScore):
-        """Calculates the reward earned for each player and updates live
-        Parameters
-        ----------
-        message
-            message object that contains metadata about the message being inspected
-
-        suspicionScore
-            float from 0 to 1 representing how certain probalisticly the defender things this message is malicious
-        
-        Returns
-        -------
-        None
-        """
-        label = Defender.NO_SUSPICION_LABEL 
-        if suspicionScore > Defender..NO_SUSPICION_CUTOFF and suspicionScore <= GameEngine.LOW_SUSPICION_CUTOFF:
-            label = Defender.LOW_SUSPICION_LABEL 
-        elif suspicionScore > Defender.LOW_SUSPICION_CUTOFF and suspicionScore <= GameEngine.MEDIUM_SUSPICION_CUTOFF:
-            label = Defender.MEDIUM_SUSPICION_LABEL 
-        elif suspicionScore > Defender.MEDIUM_SUSPICION_CUTOFF:
-            label = Defender.HIGH_SUSPICION_LABEL 
-        
-        return label
 
     def analyzeGameResults(self):
         """Return average degree, clustering coefficient, and connectedness of infected vs non-infected graph"""
@@ -435,7 +422,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     engine = GameEngine(trafficPath= args.trafficPath, attackPath= args.attackPath, networkPath= args.networkPath, loadModels= args.load)
-
+    engine.infectedNodes = ['0']
+    engine.reachableNodes = [int(engine.isReachable(node)) for node in engine.graph.nodes()]
+    
     for episode in range(args.episodes):
         print('Starting episode', episode)
         engine.runGame()

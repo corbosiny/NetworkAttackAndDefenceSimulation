@@ -2,7 +2,7 @@
 import random
 import numpy as np
 import pandas as pd
-#import networx # only uncommnet for testing
+#import networkx # only uncommnet for testing
 
 # User defined libraries
 from Agent import *
@@ -74,7 +74,7 @@ class Attacker(Agent):
         trafficFlow
             The number of messages going to each node in the network this round
         
-        reachable
+        reachableNodes
             Binary array with 1 representing a node reachable by the infected network
         
         infectionScores
@@ -102,9 +102,10 @@ class Attacker(Agent):
             attackerInputs = trafficFlow + reachableNodes + infectionScores
             formattedInputs = np.reshape(attackerInputs, [1, self.INPUT_SIZE])
             modelOutput = self.model.predict(formattedInputs)[0]
-            validDestinations = [[index, score] for index, score in enumerate(modelOutput[:-1]) if reachable[index]]
+            validDestinations = [[index, score] for index, score in enumerate(modelOutput[:-1]) if reachableNodes[index]]
             validDestinations.append([len(modelOutput) - 1, modelOutput[-1]])
             destinationIndex = max(validDestinations, key=lambda x: x[1])[0]
+            print(modelOutput)
 
         message = self.buildAttackMessage(destinationIndex, infectedNodes, graph)
         return message, destinationIndex
@@ -210,14 +211,14 @@ class Attacker(Agent):
         
         Parameters
         ----------
-            attackerInputs
-                 An array containing the set of reachable nodes and the reward for infecting each of those nodes
+        attackerInputs
+                An array containing the set of reachable nodes and the reward for infecting each of those nodes
 
-            attackIndex
-                The index in the list of nodes of the graph that were attacked this round
+        attackIndex
+            The index in the list of nodes of the graph that were attacked this round
 
-            reward
-                the integer reward for the current state action sequence
+        reward
+            the integer reward for the current state action sequence
 
         Returns
         -------
@@ -227,8 +228,9 @@ class Attacker(Agent):
         self.memory.append([attackerInputs, attackIndex, reward])
 
 if __name__ == "__main__":
-    pass # Uncomment code below for testing
-    # epsilon = 0.20
+    pass
+    #Uncomment code below for testing
+    # epsilon = 0
     # graph = networkx.DiGraph()
     # graphLen = 3
     # for i in range(graphLen):
@@ -241,11 +243,16 @@ if __name__ == "__main__":
     # infectedNodes = [0]
     # attackIndex = 1
     # reward = 10
-    # attacker.loadModel()
 
     # trafficFlow = trafficInfo[attacker.TRAFFIC_FLOW_INDEX : int(attacker.TRAFFIC_FLOW_INDEX+(attacker.INPUT_SIZE/3))]
     # reachable = trafficInfo[attacker.REACHABLE_NODES_INDEX : int(attacker.REACHABLE_NODES_INDEX+(attacker.INPUT_SIZE/3))]
     # infectionScores = trafficInfo[attacker.INFECTION_SCORES_INDEX : int(attacker.INFECTION_SCORES_INDEX+(attacker.INPUT_SIZE/3))]
-    # print(attacker.getAttack(trafficFlow, reachable, infectionScores, infectedNodes, graph))
-    # attacker.addTrainingPoint(trafficInfo, 1, 1)
-    # attacker.train()
+    # print('Pre load: ')
+    # attacker.getAttack(trafficFlow, reachable, infectionScores, infectedNodes, graph)
+    # attacker.saveModel()
+    # attacker.initializeModel()
+    # print('Newly initialized model: ')
+    # attacker.getAttack(trafficFlow, reachable, infectionScores, infectedNodes, graph)
+    # attacker.loadModel()
+    # print('Post loading: ')
+    # attacker.getAttack(trafficFlow, reachable, infectionScores, infectedNodes, graph)
