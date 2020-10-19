@@ -5,6 +5,7 @@ import random
 import pandas as pd
 import matplotlib.pyplot as plt
 import time
+import math
 
 # User defined libraries
 from Attacker import Attacker
@@ -29,22 +30,11 @@ class GameEngine():
     """
 
     ### Static Class Variables
+    MAX_BACKGROUND_TRAFFIC_MESSAGES = 5                      # The maximum number of background messages between attacks
 
-    MAX_BACKGROUND_TRAFFIC_MESSAGES = 5                       # The maximum number of background messages between attacks
-    
-    # Thresholds for the suspicion score 
-    NO_SUSPICION_CUTOFF     = .1                              # Any messages below this threshold are considered not suspicous                                       
-    LOW_SUSPICION_CUTOFF  = .35                               # Any messages inside this threshold are still considered not suspicous but are colored differently
-    MEDIUM_SUSPICION_CUTOFF = .6                              # Any messages inside this threshold are considered flagged but not ouright rejected
-
-    # Colorings for suspicion scores
-    NO_SUSPICION_LABEL = 'NONE'
-    LOW_SUSPICION_LABEL = 'LOW'
-    MEDIUM_SUSPICION_LABEL = 'MEDIUM'
-    HIGH_SUSPICION_LABEL = 'HIGH'
-
-    COLOR_MAP = {NO_SUSPICION_LABEL  : 'blue', LOW_SUSPICION_LABEL  : 'cyan', MEDIUM_SUSPICION_LABEL :  'orange', HIGH_SUSPICION_LABEL : 'red'}
-
+    COLOR_MAP = {Defender.NO_SUSPICION_LABEL  : 'blue', Defender.LOW_SUSPICION_LABEL  : 'yellow', Defender.MEDIUM_SUSPICION_LABEL :  'orange', Defender.HIGH_SUSPICION_LABEL : 'red'}
+    NOT_INFECTED_MARKER = 'o'                                 # Non-infected nodes show up as circles
+    INFECTED_MARKER = 'X'                                     # Infected nodes appear as filled X markers
     GRAPH_DELAY = 1                                           # Time delay in seconds between graph updates
 
     # Indicies for the network file
@@ -53,12 +43,15 @@ class GameEngine():
 
     ###  Method functions
     
-    def __init__(self, datasetPath, networkPath, loadModels= False, epsilon= 1):
+    def __init__(self, trafficPath, attackPath, networkPath, loadModels= False, epsilon= 1):
         """Class constructor
         Parameters
         ----------
-        datasetPath
-            String representing the file path to the dataset used for background traffic
+        trafficPath
+            String representing the file path to the dataset used for background messages
+
+        attackPath
+            String representing the file path to the dataset used for attack messages
 
         networkPath
             String representing the file path to the network parameters file
@@ -74,7 +67,8 @@ class GameEngine():
         None
         """
         self.firstGame = True
-        self.datasetPath = datasetPath
+        self.trafficPath = trafficPath
+        self.attackPath = attackPath
         self.networkPath = networkPath
         self.loadModels = loadModels
         self.startingEpsilon = epsilon
@@ -91,14 +85,13 @@ class GameEngine():
         -------
         None
         """
-        self.queue = []
         self.colorMap = {}
-        self.loadDataset(self.datasetPath)
+        self.loadTrafficDataset(self.trafficPath)
         self.initializeNetwork(self.networkPath)
         
         if self.firstGame:
             self.firstGame = False
-            self.attacker = Attacker(epsilon= self.startingEpsilon)
+            self.attacker = Attacker(datasetPath= self.attackPath, networkSize= len(self.graph.nodes()), epsilon= self.startingEpsilon)
             self.defender = Defender(epsilon= self.startingEpsilon)
             if self.loadModels:
                 self.attacker.loadModel()
@@ -108,18 +101,18 @@ class GameEngine():
             self.defender.prepareForNextGame()
             
         
-    def loadDataset(self, datasetPath):
+    def loadTrafficDataset(self, trafficPath):
         """loads in the dataset for generating background traffic
         Parameters
         ----------
-        datasetPath
+        trafficPath
             String representing the file path to the dataset used for background traffic
         
         Returns
         -------
         None
         """
-        self.dataset = pd.read_csv(datasetPath)
+        self.dataset = pd.read_csv(trafficPath)
 
     def initializeNetwork(self, networkPath):
         """loads in the network parameters and creates a networkx graph
@@ -139,15 +132,20 @@ class GameEngine():
                 elems = line.split(',')
                 sourceIP = elems[GameEngine.NETWORK_SOURCE_IP_INDEX].strip()
                 sinkIP = elems[GameEngine.NETWORK_SINK_IP_INDEX].strip()
+
                 if not self.graph.has_node(sourceIP):
                     self.graph.add_node(sourceIP)
-                    self.colorMap[sourceIP] = GameEngine.COLOR_MAP[GameEngine.NO_SUSPICION_LABEL]
+                    self.colorMap[sourceIP] = GameEngine.COLOR_MAP[Defender.NO_SUSPICION_LABEL]
                 if not self.graph.has_node(sinkIP):
                     self.graph.add_node(sinkIP)
-                    self.colorMap[sinkIP] = GameEngine.COLOR_MAP[GameEngine.NO_SUSPICION_LABEL]
-                
+                    self.colorMap[sinkIP] = GameEngine.COLOR_MAP[Defender.NO_SUSPICION_LABEL]
                 self.graph.add_edge(sourceIP, sinkIP)
-                
+
+        allNodes = [node for node in self.graph.nodes()]
+        self.infectedNodes = random.sample(allNodes, 1)
+        self.reachableNodes = [int(self.isReachable(node)) for node in allNodes]
+        self.quarantinedNodes = []
+
     def runGame(self):
         """Runs through one instance of the game,
            game ends when one player runs out of lives
@@ -160,32 +158,31 @@ class GameEngine():
         None
         """
         while not self.gameOver():
-            self.updateQueue()
-            while len(self.queue) > 0:
-                message = self.queue.pop()
-                suspicionScore = self.defender.inspect(message)
-                label = self.getSuspicionLabel(suspicionScore)
-                self.updateGraph(message, label)
-                reward = self.updateScore(message, label)
+           organizedQueues, trafficInfo, attackIndex = self.generateTrafficQueues()
+           for queue in organizedQueues.values():
+               for message in queue:
+                   if not self.graph.has_edge(message.origin, message.destination): continue
 
-                self.defender.addTrainingPoint(message, suspicionScore, reward)
-                if message.isMalicious(): self.attacker.addTrainingPoint(message, suspicionScore, -reward)
+                   if random.random() > self.calculateInspectionChance(len(queue)): 
+                       print('Current message', message, ' was skipped inspection')
+                       suspicionLabel = Defender.LOW_SUSPICION_LABEL
+                   else:
+                       suspicionLabel = self.defender.inspect(message)
 
-                print('Current message', message, 'was given a suspicion score of:', suspicionScore)
-                self.displayGraph()
+                   self.updateNetwork(message, suspicionLabel)
+                   reward = self.calculateScore(message, suspicionLabel)
 
-                if self.gameOver(): break
-        
-        if self.attacker.lives == 0: 
-            print('The Defender has won this episode')
-        else:
-            print('The Attacker has won this episode')
+                   self.defender.addTrainingPoint(message, suspicionLabel, reward)
+                   if message.isMalicious(): self.attacker.addTrainingPoint(trafficInfo, attackIndex, -reward)
+
+                   print('Current message', message, ' was given a suspicion label of:', suspicionLabel)
+                   self.displayGraph()
 
     def gameOver(self):
         """Returns true if one player is out of lives"""
-        return self.defender.lives == 0 or self.attacker.lives == 0
+        return not any(self.reachableNodes)
 
-    def updateQueue(self):
+    def generateTrafficQueues(self):
         """Fills the game queue with a random number of background messages,
            then randomly inserts the attack message into the queue
         Parameters
@@ -194,24 +191,34 @@ class GameEngine():
         
         Returns
         -------
-        None
+        organizedQueues
+            Dictionary with keys of node IPs and values representing the queue of message for that node
+
+        trafficInfo
+            Array containing information regarding each node about reachability, reward, and current traffic load
+        
+        attackIndex
+            Integer representing the index in the set of graph nodes that is being attacked
         """
-        messages = self.generateBackgroundTraffic()
-        attack = self.attacker.getAttack(self.graph.nodes())
-        position = random.randint(0, len(messages) + 1)
-        messages.insert(position, attack)
-        for message in messages:
-            self.queue.append(message)
+        self.traffic = self.generateBackgroundTraffic()
+        organizedQueues = {node : [message for message in self.traffic if message.destination == node] for node in self.graph.nodes()}
+        
+        nodeInformation = [[len(organizedQueues[node]), self.isReachable(node), self.calculateNodeInfectionReward(node)] for node in self.graph.nodes()]
+        trafficFlow, reachable, infectionScores = list(zip(*nodeInformation))
+        
+        attackMessage, attackIndex = self.attacker.getAttack(trafficFlow, reachable, infectionScores, self.infectedNodes, self.graph)
+        if attackMessage != None:
+            position = random.randint(0, len(organizedQueues[attackMessage.destination]) + 1)
+            organizedQueues[attackMessage.destination].insert(position, attackMessage)
+            
+        trafficInfo = (trafficFlow + reachable + infectionScores)
+        return organizedQueues, trafficInfo, attackIndex
 
     def generateBackgroundTraffic(self):
         """Generate a random number of background messages from the dataset
         Parameters
         ----------
-        message
-            message object that contains metadata about the message being inspected
-
-       label
-           String label representing the suspicion category the message falls into
+        None
         
         Returns
         -------
@@ -219,16 +226,26 @@ class GameEngine():
         """
         messages = []
         numMessages = random.randint(1, GameEngine.MAX_BACKGROUND_TRAFFIC_MESSAGES)
-        rowIndices = [random.randint(1, len(self.dataset.index) - 1) for _ in range(numMessages)]
+        datasetLength = len(self.dataset.index)
+        rowIndices = [random.randint(1, datasetLength - 1) for _ in range(numMessages)]
         rows = [list(self.dataset.iloc[index]) for index in rowIndices]
         for row in rows:            
             nodes = [node for node in self.graph.nodes()]
-            newOrigin = random.choice(nodes) # Take out in final version?
+            newOrigin = random.choice(nodes)
             row[Message.ORIGIN_INDEX] = newOrigin
+            try:
+                row[Message.DESTINATION_INDEX] = random.choice([node for node in nodes if self.graph.has_edge(newOrigin, node)])    # Pick destination as random node that it has a connection with
+            except: 
+                continue
             messages.append(Message(row))
         return messages
 
-    def updateGraph(self, message, label):
+    def calculateInspectionChance(self, queueLength):
+        """Returns the probability of checking a message based on the size of the queue it's in
+        """
+        return 2.195 - (1 / (1 + math.exp(-.75 * queueLength))) - (1 / (1 + math.exp(-.05 *queueLength)))
+
+    def updateNetwork(self, message, label):
         """Recolor the graph based on the new label
 
         Parameters
@@ -244,15 +261,106 @@ class GameEngine():
         None
         """
         self.colorMap[message.origin] = GameEngine.COLOR_MAP[label]
+        if label == Defender.HIGH_SUSPICION_LABEL or label == Defender.MEDIUM_SUSPICION_LABEL:
+            self.quarantineNode(message.origin, message.destination, label)
+        elif message.isMalicious():
+            self.infectNode(message.destination)
 
+        self.reachableNodes = [int(self.isReachable(node)) for node in self.graph.nodes()]
+
+    def quarantineNode(self, origin, destination, label):
+        """Remove outgoing edges from a node effectively hindering it from spreading infection
+        Parameters
+        ----------
+        origin
+            IP of the sender of the suspected infected message
+
+        destination
+            IP of the intended receipent of the suspected infected message
+
+       label
+           String label representing the suspicion category the message falls into
+           Determines the strength of the quarantine
+        
+        Returns
+        -------
+        None
+        """
+        if label == Defender.HIGH_SUSPICION_LABEL:
+            if origin not in self.quarantinedNodes: self.quarantinedNodes.append(origin)
+            for node in self.graph.nodes(): 
+                if self.graph.has_edge(origin, node): self.graph.remove_edge(origin, node)
+        else:
+            self.graph.remove_edge(origin, destination)
+    
+
+    def infectNode(self, destination):
+        """Marks a node as infected if not previously infectged
+        Parameters
+        ----------
+        destination
+            IP of the receipent of the infected message
+
+        Returns
+        -------
+        None
+        """
+        if destination not in self.infectedNodes:
+            self.infectedNodes.append(destination)
+
+    def calculateNodeInfectionReward(self, node):
+        """Calculates reward for infecting the specified node
+        Parameters
+        ----------
+        node
+            node from the graph representing an IoT device
+
+        Returns
+        -------
+        score
+            integer value representing the degree of that node to other non-infected nodes
+        """
+        if node in self.infectedNodes: return 0 # No reward if currently impossible to infect
+        score = 1
+        for destination in self.graph.nodes():
+            if self.graph.has_edge(node, destination) and destination not in self.infectedNodes:
+                score += 1
+        return score
+
+    def isReachable(self, node):
+        """Determines if a node is reachable for infection
+        Parameters
+        ----------
+        node
+            node from the graph representing an IoT device
+
+        Returns
+        -------
+        reachable
+            boolean value stating whether the node is reachable by the infected nodes
+        """
+        if node in self.infectedNodes:
+            return False
+
+        for infectedNode in self.infectedNodes:
+            if self.graph.has_edge(infectedNode, node):
+                return True
+
+        return False
 
     def displayGraph(self):
         """Displays the current network colored by past suspicion scores"""
-        networkx.draw_circular(self.graph, node_color= self.colorMap.values(), with_labels=True)
+
+        notInfectedNodes = [node for node in self.graph.nodes() if node not in self.infectedNodes]
+        infectedColorMap = [self.colorMap[node] for node in self.infectedNodes]
+        notInfectedColorMap = [self.colorMap[node] for node in notInfectedNodes]
+        networkx.draw_circular(self.graph, nodelist= self.infectedNodes, node_shape= GameEngine.INFECTED_MARKER, node_color = infectedColorMap, with_labels= True)
+        networkx.draw_circular(self.graph, nodelist= notInfectedNodes, node_shape= GameEngine.NOT_INFECTED_MARKER, node_color= notInfectedColorMap, with_labels=True)
         plt.show()
         plt.pause(GameEngine.GRAPH_DELAY)
+        plt.clf()
 
-    def updateScore(self, message, label):
+    def calculateScore(self, message, label):
         """Calculates the reward earned for each player and updates lives
         Parameters
         ----------
@@ -264,50 +372,28 @@ class GameEngine():
         
         Returns
         -------
-        None
+        score
+            The score earned by the agents for this interaction
         """
-        reward = 0
-        if message.isMalicious() and label == GameEngine.HIGH_SUSPICION_LABEL:
-            self.attacker.lives -= 1
-            reward = 10
-        elif message.isMalicious() and label == GameEngine.MEDIUM_SUSPICION_LABEL:
-            reward = 5
+        possibleReward = self.calculateNodeInfectionReward(message.destination)
+        if message.isMalicious() and label == Defender.HIGH_SUSPICION_LABEL:
+            return possibleReward
+        elif message.isMalicious() and label == Defender.MEDIUM_SUSPICION_LABEL:
+            return possibleReward / 2
         elif message.isMalicious():
-            self.defender.lives -= 1
-            reward = -10
-        elif not message.isMalicious() and label ==  GameEngine.HIGH_SUSPICION_LABEL:
-            self.defender.lives -= 1
-            reward = -10
-        elif not message.isMalicious() and label == GameEngine.MEDIUM_SUSPICION_LABEL:
-            reward = 0
+            return -possibleReward
+        elif not message.isMalicious() and label ==  Defender.HIGH_SUSPICION_LABEL:
+            return -possibleReward
+        elif not message.isMalicious() and label == Defender.MEDIUM_SUSPICION_LABEL:
+            return -possibleReward / 2
         elif not message.isMalicious():
-            reward = 10
+            return possibleReward
+        else:
+            return 0
 
-        return reward
-
-    def getSuspicionLabel(self, suspicionScore):
-        """Calculates the reward earned for each player and updates live
-        Parameters
-        ----------
-        message
-            message object that contains metadata about the message being inspected
-
-        suspicionScore
-            float from 0 to 1 representing how certain probalisticly the defender things this message is malicious
-        
-        Returns
-        -------
-        None
-        """
-        label = GameEngine.NO_SUSPICION_LABEL 
-        if suspicionScore > GameEngine.NO_SUSPICION_CUTOFF and suspicionScore <= GameEngine.LOW_SUSPICION_CUTOFF:
-            label = GameEngine.LOW_SUSPICION_LABEL 
-        elif suspicionScore > GameEngine.LOW_SUSPICION_CUTOFF and suspicionScore <= GameEngine.MEDIUM_SUSPICION_CUTOFF:
-            label = GameEngine.MEDIUM_SUSPICION_LABEL 
-        elif suspicionScore > GameEngine.MEDIUM_SUSPICION_CUTOFF:
-            label = GameEngine.HIGH_SUSPICION_LABEL 
-        
-        return label
+    def analyzeGameResults(self):
+        """Return average degree, clustering coefficient, and connectedness of infected vs non-infected graph"""
+        pass
 
     def train(self):
         """starts the training runs for each player
@@ -327,19 +413,24 @@ class GameEngine():
 if __name__ == "__main__":
     """Runs a specified number of games, training can be turned on via the train flag"""
     parser = argparse.ArgumentParser(description= 'Processes game parameters.')
-    parser.add_argument('-dp', '--dataPath', type= str, default= "../datasets/defaultDataset.csv", help= 'Path to the file of network parameters for the game')
+    parser.add_argument('-ap', '--attackPath', type= str, default= "../datasets/defaultAttackDataset.csv", help= 'Path to the file of attack messages')
+    parser.add_argument('-tp', '--trafficPath', type= str, default= "../datasets/defaultTrafficDataset.csv", help= 'Path to the file of background messages')
     parser.add_argument('-np', '--networkPath', type= str, default= "../networks/defaultNetwork.csv", help= 'Path to the file of network parameters for the game')
     parser.add_argument('-ep', '--episodes', type= int, default= 1, help= 'Number of games to be played')
     parser.add_argument('-t', '--train', action= 'store_true', help= 'Whether the agents should be training at the end of each game')
     parser.add_argument('-l', '--load', action= 'store_true', help= 'Whether previous models should be loaded in for this game')
     args = parser.parse_args()
 
-    engine = GameEngine(datasetPath= args.dataPath, networkPath= args.networkPath, loadModels= args.load)
-
+    engine = GameEngine(trafficPath= args.trafficPath, attackPath= args.attackPath, networkPath= args.networkPath, loadModels= args.load)
+    engine.infectedNodes = ['0']
+    engine.reachableNodes = [int(engine.isReachable(node)) for node in engine.graph.nodes()]
+    
     for episode in range(args.episodes):
         print('Starting episode', episode)
         engine.runGame()
         print('Episode', episode, 'complete')
+        print('Post game analysis: ')
+        engine.analyzeGameResults()
         if args.train:
             engine.train()
             print('Training for episode', episode, 'complete')

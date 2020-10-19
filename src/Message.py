@@ -8,6 +8,7 @@ class Message():
 
     # Metadata index variables
     ORIGIN_INDEX = 3
+    DESTINATION_INDEX = 6
     LABEL_INDEX = 14
 
     ### Member functions
@@ -22,6 +23,9 @@ class Message():
             origin
                 String with the IP address of the originating node
 
+            destination
+                String with the IP address of the destination node
+
             label
                 String representing whether the message is malicious or benign
             
@@ -30,6 +34,7 @@ class Message():
         None
         """
         self.origin = args[Message.ORIGIN_INDEX]
+        self.destination = args[Message.DESTINATION_INDEX]
         self.label = args[Message.LABEL_INDEX]
 
     def isMalicious(self):
@@ -47,21 +52,27 @@ class Message():
         Metadata array containing these elements:
             origin
                 String with the IP address of the originating node
+            
+            destination
+                String with the IP address of the destination node
 
         """
-        return [self.origin]
+        #return [self.origin, self.destination]
+        return [10, 2, 3, 4]
 
     def __str__(self):
         """Returns a string of the message metadata when an attempt to turn a message object into a string occurs"""
         args = self.asNetworkInputs()
-        args.append(self.label)
+        args = [self.origin, self.destination, self.label] + args
+        args = [str(arg) for arg in args]
         string = ','.join(args)
         return string
 
-if __name__ == "__main__":
-    args = ['','','', "127.0.0.0.1", '', '', '', '', '', '', '', '','','', Message.BENIGN_LABEL]
+if __name__ == "__main__": 
+    args = ['','','', "127.0.0.0.1", '', '', '196.62.0.1', '', '', '', '', '','','', Message.MALICIOUS_LABEL]
     message = Message(args)
     print(message.origin)
+    print(message.destination)
     print(message.label)
     print(message.isMalicious())
     print(message.asNetworkInputs())

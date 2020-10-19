@@ -35,6 +35,7 @@ class Agent():
 
     ### Instance Functions
     def __init__(self, epsilon= 1):
+        """Constructor"""
         self.name = self.__class__.__name__
         self.epsilon = epsilon
         self.lossHistory = LossHistory()
@@ -53,16 +54,15 @@ class Agent():
         None
         """
         self.score = 0
-        self.lives = 10
         self.memory = deque(maxlen= Agent.MAX_DATA_LENGTH)
 
     def getModelName(self):
         """Returns the formatted model name for the current model"""
-        return  self.name + "Model.m"
+        return  self.name + "Model"
 
     def getLogsName(self):
         """Returns the formatted log name for the current model"""
-        return self.name + "Logs.l"
+        return self.name + "Logs"
 
     def saveModel(self):
         """Saves the currently trained model in the default naming convention ../models/{Class_Name}Model
@@ -91,11 +91,12 @@ class Agent():
         -------
         None
         """
+        print('Model successfully loaded')
         self.model.load_weights(os.path.join(Agent.DEFAULT_MODELS_DIR_PATH, self.getModelName()))
 
     ### Abstract methods for the child Agent to implement
     def initializeModel(self):
-        """Initializes the model of the agent, must set self.outputSize of model
+        """Initializes the model of the agent
         Parameters
         ----------
         None
@@ -145,7 +146,6 @@ if __name__ == "__main__":
     print(agent.name)
     print(agent.score)
     print(agent.lossHistory)
-    print(agent.lives)
     agent.memory.append(2)
     print(agent.memory)
     print(agent.getLogsName())
