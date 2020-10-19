@@ -57,11 +57,11 @@ class Agent():
 
     def getModelName(self):
         """Returns the formatted model name for the current model"""
-        return  self.name + "Model.m"
+        return  self.name + "Model"
 
     def getLogsName(self):
         """Returns the formatted log name for the current model"""
-        return self.name + "Logs.l"
+        return self.name + "Logs"
 
     def saveModel(self):
         """Saves the currently trained model in the default naming convention ../models/{Class_Name}Model
@@ -94,7 +94,7 @@ class Agent():
 
     ### Abstract methods for the child Agent to implement
     def initializeModel(self):
-        """Initializes the model of the agent, must set self.outputSize of model
+        """Initializes the model of the agent
         Parameters
         ----------
         None
@@ -144,7 +144,6 @@ if __name__ == "__main__":
     print(agent.name)
     print(agent.score)
     print(agent.lossHistory)
-    print(agent.lives)
     agent.memory.append(2)
     print(agent.memory)
     print(agent.getLogsName())

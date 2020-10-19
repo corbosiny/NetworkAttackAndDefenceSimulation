@@ -5,7 +5,7 @@ High level engine changes:
 - Game is over when no more reachable nodes -- Done
 - Add in quarantined/safe node set, updated on labels -- Done 
 - High suspicion quarantines a node, removes all edges, medium removes most recent edges, update graph will include edges changing  -- Done
-- Find way to label infect nodes 
+- Find way to label infect nodes -- Done
 - Generate background traffic only to and from non quarantined nodes -- Done
 - Organize messages based on receiving nodes -- Done
 
@@ -26,9 +26,15 @@ Attacker changes:
 - add traffic flow amounts to attacker inputs -- done
 - fix generating traffic to only existing edges -- done
 - add probability to inspection of messages -- done
-- edit train for attacker
+- edit train for attacker -- done
 - update proper indicies for message metadata parsing -- done
 - edit train for defender -- done
 
+Debug checklist:
+- Message -- Done
+- Agent -- Done
+- Defender -- Done
+- Attacker -- Done
+- Game Engine
 
 - m3 scalability?? - Discuss later, start with 50 nodes

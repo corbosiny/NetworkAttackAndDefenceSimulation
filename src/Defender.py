@@ -28,7 +28,7 @@ class Defender(Agent):
         super(Defender, self).__init__(epsilon= epsilon)
 
     def initializeModel(self):
-        """Initializes the model of the agent, must set self.outputSize of model
+        """Initializes the model of the agent
         Parameters
         ----------
         None
@@ -59,12 +59,13 @@ class Defender(Agent):
 
         """
         if random.random() < self.epsilon:
-            return random.random()
+            return random.sample(Defender.SUSPICION_LABELS, 1)[0]
         else:
-            #modelOutput = self.model.predict(message.asNetworkInputs())[0]
-            #index = np.argmax(modelOutput)
-            #return Defender.SUSPICION_LABELS[index]
-            return random.random()
+            formattedInputs =  np.reshape(message.asNetworkInputs(), [1, Defender.INPUT_SIZE])
+            modelOutput = self.model.predict(formattedInputs)[0]
+            print(modelOutput)
+            index = np.argmax(modelOutput)
+            return Defender.SUSPICION_LABELS[index]
 
     def train(self):
         """Reviews the game memory and runs through one epoch of training for the model
@@ -78,11 +79,12 @@ class Defender(Agent):
         """
         minibatch = random.sample(self.memory, len(self.memory))
         self.lossHistory.losses_clear()
-        for messageInputs, truth, in minibatch:  
-            modelOutput = model.predict(messageInputs)[0]   
+        for messageInputs, truth, reward in minibatch:
+            formattedInputs = np.reshape(messageInputs, [1, Defender.INPUT_SIZE])  
+            modelOutput = self.model.predict(formattedInputs)[0]
             modelOutput[Defender.SUSPICION_LABELS.index(truth)] = reward
             modelOutput = np.reshape(modelOutput, [1, Defender.OUTPUT_SIZE])
-            self.model.fit(messageInputs, modelOutput, epochs= 1, verbose= 0, callbacks= [self.lossHistory])
+            self.model.fit(formattedInputs, modelOutput, epochs= 1, verbose= 0, callbacks= [self.lossHistory])
 
         if self.epsilon > Agent.EPSILON_MIN: self.epsilon *= Agent.DEFAULT_EPSILON_DECAY
 
@@ -105,26 +107,16 @@ class Defender(Agent):
         None
         """
         self.score += reward
-        self.memory.append([message.asNetworkInputs(), suspicionLabel])
+        self.memory.append([message.asNetworkInputs(), suspicionLabel, reward])
 
 if __name__ == "__main__":
-    epsilon = .5
+    epsilon = 0
     defender = Defender(epsilon= epsilon)
-    print(defender.epsilon)
-    print(defender.name)
-    print(defender.score)
-    print(defender.lossHistory)
-    print(defender.lives)
-    print(defender.model)
-
-    args = ['','','', "127.0.0.0.1", '', '', '', '', '', '', '', '','','', Message.BENIGN_LABEL]
-    message = Message(args)
-    print(defender.addTrainingPoint(message, .5, 10))
-    print(defender.score)
-    print(defender.memory)
-    print(defender.getLogsName())
-    print(defender.getModelName())
-    for i in range(5):
-        print(defender.inspect(message))
     defender.saveModel()
-    defender.loadModel()
+    #print(defender.epsilon)
+    #print(defender.name)
+    #print(defender.score)
+    #print(defender.lossHistory)
+    #print(defender.model)
+
+

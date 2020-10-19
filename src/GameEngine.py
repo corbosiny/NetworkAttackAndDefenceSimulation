@@ -34,7 +34,8 @@ class GameEngine():
     MAX_BACKGROUND_TRAFFIC_MESSAGES = 20                      # The maximum number of background messages between attacks
 
     COLOR_MAP = {Defender.NO_SUSPICION_LABEL  : 'blue', Defender.LOW_SUSPICION_LABEL  : 'yellow', Defender.MEDIUM_SUSPICION_LABEL :  'orange', Defender.HIGH_SUSPICION_LABEL : 'red'}
-
+    NOT_INFECTED_MARKER = 'o'                                 # Non-infected nodes show up as circles
+    INFECTED_MARKER = 'X'                                     # Infected nodes appear as filled X markers
     GRAPH_DELAY = 1                                           # Time delay in seconds between graph updates
 
     # Indicies for the network file
@@ -91,7 +92,7 @@ class GameEngine():
         
         if self.firstGame:
             self.firstGame = False
-            self.attacker = Attacker(datasetPath= self.attackPath, epsilon= self.startingEpsilon)
+            self.attacker = Attacker(datasetPath= self.attackPath, networkSize= len(self.graph.nodes()), epsilon= self.startingEpsilon)
             self.defender = Defender(epsilon= self.startingEpsilon)
             if self.loadModels:
                 self.attacker.loadModel()
@@ -139,11 +140,13 @@ class GameEngine():
                 if not self.graph.has_node(sinkIP):
                     self.graph.add_node(sinkIP)
                     self.colorMap[sinkIP] = GameEngine.COLOR_MAP[Defender.NO_SUSPICION_LABEL]
-                
+                    self.
                 self.graph.add_edge(sourceIP, sinkIP)
 
         allNodes = [node for node in self.graph.nodes()]
         self.infectedNodes = random.sample(allNodes, 1)
+        self.shapeMap = {node : NOT_INFECTED_MARKER for node in allNodes}
+        self.shapeMap[self.infectedNodes[0]] = INFECTED_MARKER
         self.reachableNodes = [int(self.isReachable(node)) for node in allNodes]
         self.quarantinedNodes = []
 
@@ -159,7 +162,7 @@ class GameEngine():
         None
         """
         while not self.gameOver():
-           organizedQueues, trafficInfo = self.generateTrafficQueues()
+           organizedQueues, trafficInfo, attckIndex = self.generateTrafficQueues()
 
             for queue in organizedQueues.values():
                 for message in queue:
@@ -170,7 +173,7 @@ class GameEngine():
                     reward = self.updateScore(message, suspicionLabel)
 
                     self.defender.addTrainingPoint(message, suspicionLabel, reward)
-                    if message.isMalicious(): self.attacker.addTrainingPoint(trafficInfo, -reward)
+                    if message.isMalicious(): self.attacker.addTrainingPoint(trafficInfo, attackIndex, -reward)
 
                     print('Current message', message, ' was given a suspicion score of:', suspicionScore)
                     self.displayGraph()
@@ -191,19 +194,22 @@ class GameEngine():
         organizedQueues
             Dictionary with keys of node IPs and values representing the queue of message for that node
 
-        attackerInputs
+        trafficInfo
             Array containing information regarding each node about reachability, reward, and current traffic load
+        
+        attackIndex
+            Integer representing the index in the set of graph nodes that is being attacked
         """
         self.traffic = self.generateBackgroundTraffic()
         organizedQueues = {node : [message for message in self.traffic if message.destination == node] for node in self.graph.nodes()}
         nodeInformation = [[len(organizedQueues[node]), node in self.reachableNodes, self.calculateNodeInfectionReward(node)] for node in self.graph.nodes()]
         trafficFlow, reachable, infectionScores = list(zip(*nodeInformation))
-        attack = self.attacker.getAttack(trafficFlow, reachable, infectionScores, self.infectedNodes, self.graph)
-        if attack != None:
+        attackMessage, attackIndex = self.attacker.getAttack(trafficFlow, reachable, infectionScores, self.infectedNodes, self.graph)
+        if attackMessage != None:
             position = random.randint(0, len(organizedQueues[attack.destination]) + 1)
-            organizedQueues[attack.destination].insert(position, attack)
-        attackerInputs = (trafficFlow + reachable + infectionScores)
-        return organizedQueues, attackerInputs
+            organizedQueues[attackMessage.destination].insert(position, attackMessage)
+        trafficInfo = (trafficFlow + reachable + infectionScores)
+        return organizedQueues, trafficInfo, attackIndex
 
     def generateBackgroundTraffic(self):
         """Generate a random number of background messages from the dataset
@@ -294,7 +300,8 @@ class GameEngine():
         None
         """
         if destination not in self.infectedNodes:
-            self.infectedNodes.append(destination) 
+            self.infectedNodes.append(destination)
+            self.shapeMap[destination] = INFECTED_MARKER 
 
     def calculateNodeInfectionReward(self, node):
         """Calculates reward for infecting the specified node
@@ -338,7 +345,8 @@ class GameEngine():
 
     def displayGraph(self):
         """Displays the current network colored by past suspicion scores"""
-        networkx.draw_circular(self.graph, node_color= self.colorMap.values(), with_labels=True)
+
+        networkx.draw_circular(self.graph, node_shape= self.shapeMap.values(), node_color= self.colorMap.values(), with_labels=True)
         plt.show()
         plt.pause(GameEngine.GRAPH_DELAY)
 

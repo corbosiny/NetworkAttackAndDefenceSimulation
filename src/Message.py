@@ -57,19 +57,22 @@ class Message():
                 String with the IP address of the destination node
 
         """
-        return [self.origin, self.destination]
+        #return [self.origin, self.destination]
+        return [10, 2, 3, 4]
 
     def __str__(self):
         """Returns a string of the message metadata when an attempt to turn a message object into a string occurs"""
         args = self.asNetworkInputs()
-        args.append(self.label)
+        args = [self.origin, self.destination, self.label] + args
+        args = [str(arg) for arg in args]
         string = ','.join(args)
         return string
 
-if __name__ == "__main__":
-    args = ['','','', "127.0.0.0.1", '', '', '', '', '', '', '', '','','', Message.BENIGN_LABEL]
+if __name__ == "__main__": 
+    args = ['','','', "127.0.0.0.1", '', '', '196.62.0.1', '', '', '', '', '','','', Message.MALICIOUS_LABEL]
     message = Message(args)
     print(message.origin)
+    print(message.destination)
     print(message.label)
     print(message.isMalicious())
     print(message.asNetworkInputs())
