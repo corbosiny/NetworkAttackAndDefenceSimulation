@@ -1,41 +1,10 @@
 TODO:
 
-High level engine changes:
-- Add in reachable by attacker node set -- Done
-- Game is over when no more reachable nodes -- Done
-- Add in quarantined/safe node set, updated on labels -- Done 
-- High suspicion quarantines a node, removes all edges, medium removes most recent edges, update graph will include edges changing  -- Done
-- Find way to label infect nodes -- Done
-- Generate background traffic only to and from non quarantined nodes -- Done
-- Organize messages based on receiving nodes -- Done
+- fix message network inputs
 
-Defender changes:
-- Defender can only read so many messages in each queue, determined by size of queues -- done
-    - 1  - .1 sigmoid()
-- Chose message metadata maybe done?
+- Write post analysis
 
-Attacker changes:
-- Attacker fed in who it can reach and message traffic going to each node, outputs node index on who to attack, also idle attack -- in progress
-- Calculate reward for each node in the network for connecting, zero if cant reach -- Done
-- Train it to output 0 for unreachable nodes -- Done
+- update scoring maybe
 
-
-- write quarantineNode/infectNode  -- done
-    - update Reachable node list   -- done
-- write calculate infection score  -- done
-- add traffic flow amounts to attacker inputs -- done
-- fix generating traffic to only existing edges -- done
-- add probability to inspection of messages -- done
-- edit train for attacker -- done
-- update proper indicies for message metadata parsing -- done
-- edit train for defender -- done
-
-Debug checklist:
-- Message -- Done
-- Agent -- Done
-- Defender -- Done
-- Attacker -- Done
-- Game Engine
-
-- m3 problems facing scalability:
+- brainstorm m3 problems facing scalability:
 
