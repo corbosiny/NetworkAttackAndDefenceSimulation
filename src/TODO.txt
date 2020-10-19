@@ -1,6 +1,12 @@
 TODO:
 
-- fix message network inputs
+- fix message network inputs:
+  Find important classification data
+  Update Message.py to parse out that data
+  Fix asNetworkInputs()
+  Update defender input size
+
+- get real datasets
 
 - Write post analysis
 
@@ -8,3 +14,4 @@ TODO:
 
 - brainstorm m3 problems facing scalability:
 
+- flag speed up locations

@@ -63,7 +63,6 @@ class Defender(Agent):
         else:
             formattedInputs =  np.reshape(message.asNetworkInputs(), [1, Defender.INPUT_SIZE])
             modelOutput = self.model.predict(formattedInputs)[0]
-            print(modelOutput)
             index = np.argmax(modelOutput)
             return Defender.SUSPICION_LABELS[index]
 
@@ -79,10 +78,10 @@ class Defender(Agent):
         """
         minibatch = random.sample(self.memory, len(self.memory))
         self.lossHistory.losses_clear()
-        for messageInputs, truth, reward in minibatch:
+        for messageInputs, label, reward in minibatch:
             formattedInputs = np.reshape(messageInputs, [1, Defender.INPUT_SIZE])  
             modelOutput = self.model.predict(formattedInputs)[0]
-            modelOutput[Defender.SUSPICION_LABELS.index(truth)] = reward
+            modelOutput[Defender.SUSPICION_LABELS.index(label)] = reward
             modelOutput = np.reshape(modelOutput, [1, Defender.OUTPUT_SIZE])
             self.model.fit(formattedInputs, modelOutput, epochs= 1, verbose= 0, callbacks= [self.lossHistory])
 

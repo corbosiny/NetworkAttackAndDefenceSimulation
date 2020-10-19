@@ -175,7 +175,7 @@ class GameEngine():
                    self.defender.addTrainingPoint(message, suspicionLabel, reward)
                    if message.isMalicious(): self.attacker.addTrainingPoint(trafficInfo, attackIndex, -reward)
 
-                   print('Current message', message, ' was given a suspicion label of:', suspicionLabel)
+                   print('Current message', message, 'was given a suspicion label of:', suspicionLabel)
                    self.displayGraph()
 
     def gameOver(self):
@@ -288,8 +288,8 @@ class GameEngine():
         """
         if label == Defender.HIGH_SUSPICION_LABEL:
             if origin not in self.quarantinedNodes: self.quarantinedNodes.append(origin)
-            for node in self.graph.nodes(): 
-                if self.graph.has_edge(origin, node): self.graph.remove_edge(origin, node)
+            out_edges = list(self.graph.out_edges(origin))
+            self.graph.remove_edges_from(out_edges)
         else:
             self.graph.remove_edge(origin, destination)
     
@@ -350,7 +350,6 @@ class GameEngine():
 
     def displayGraph(self):
         """Displays the current network colored by past suspicion scores"""
-
         notInfectedNodes = [node for node in self.graph.nodes() if node not in self.infectedNodes]
         infectedColorMap = [self.colorMap[node] for node in self.infectedNodes]
         notInfectedColorMap = [self.colorMap[node] for node in notInfectedNodes]
