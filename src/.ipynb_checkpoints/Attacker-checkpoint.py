@@ -94,7 +94,7 @@ class Attacker(Agent):
         index
             Index of the node being attacked in the graphs node list, is one greater than the lenght for a "by"
         """
-        if random.random() < self.epsilon: 
+        if random.random() < self.epsilon:
             reachableNodeIndicies = [index for index, canReach  in enumerate(reachableNodes) if canReach] 
             reachableNodeIndicies += [self.OUTPUT_SIZE - 1]
             destinationIndex = random.choice(reachableNodeIndicies)
@@ -105,6 +105,7 @@ class Attacker(Agent):
             validDestinations = [[index, score] for index, score in enumerate(modelOutput[:-1]) if reachableNodes[index]]
             validDestinations.append([len(modelOutput) - 1, modelOutput[-1]])
             destinationIndex = max(validDestinations, key=lambda x: x[1])[0]
+            print(modelOutput)
 
         message = self.buildAttackMessage(destinationIndex, infectedNodes, graph)
         return message, destinationIndex
@@ -179,7 +180,6 @@ class Attacker(Agent):
         row = self.dataset.iloc[index]
         row[Message.ORIGIN_INDEX] = origin
         row[Message.DESTINATION_INDEX] = destination
-        print('message: ', row)
         message = Message(row)
         return message
 
