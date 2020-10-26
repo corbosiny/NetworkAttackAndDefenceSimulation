@@ -425,6 +425,7 @@ if __name__ == "__main__":
     engine.reachableNodes = [int(engine.isReachable(node)) for node in engine.graph.nodes()]
     
     for episode in range(args.episodes):
+        engine.initializeGame()
         print('Starting episode', episode)
         engine.runGame()
         print('Episode', episode, 'complete')
@@ -433,4 +434,3 @@ if __name__ == "__main__":
         if args.train:
             engine.train()
             print('Training for episode', episode, 'complete')
-        engine.initializeGame()
