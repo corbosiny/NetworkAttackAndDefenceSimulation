@@ -175,11 +175,10 @@ class Attacker(Agent):
         message
             Message object containing metadata of the attack message
         """
-        index = random.randint(1, len(self.dataset.index))
+        index = random.randint(0, len(self.dataset.index) - 1)
         row = self.dataset.iloc[index]
         row[Message.ORIGIN_INDEX] = origin
         row[Message.DESTINATION_INDEX] = destination
-        print('message: ', row)
         message = Message(row)
         return message
 
