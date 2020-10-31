@@ -157,6 +157,7 @@ class GameEngine():
         -------
         None
         """
+        self.wait = False
         while not self.gameOver():
            organizedQueues, trafficInfo, attackIndex = self.generateTrafficQueues()
            self.lastAttackerScore = 0
@@ -171,14 +172,13 @@ class GameEngine():
                    else:
                        suspicionLabel = self.defender.inspect(message)
 
-                   reward = self.calculateScore(message, suspicionLabel)
+                   attackerReward, defenderReward = self.calculateScore(message, suspicionLabel)
                    self.updateNetwork(message, suspicionLabel)
 
-                   self.defender.addTrainingPoint(message, suspicionLabel, reward)
+                   self.defender.addTrainingPoint(message, suspicionLabel, defenderReward)
                    if message.isMalicious(): 
-                       self.attacker.addTrainingPoint(trafficInfo, attackIndex, -reward)
-                       self.lastAttackerScore = -reward
-                       print(self.lastAttackerScore)
+                       self.attacker.addTrainingPoint(trafficInfo, attackIndex, attackerReward)
+                       self.lastAttackerScore = attackerReward
 
                    print('Current message', str(message), 'was given a suspicion label of:', suspicionLabel)
            self.displayGraph()
@@ -390,6 +390,10 @@ class GameEngine():
 
         plt.show()
         plt.pause(GameEngine.GRAPH_DELAY)
+        if self.wait:
+            self.wait = False
+            print('waiting')
+            input()
         plt.clf()
 
     def calculateScore(self, message, label):
@@ -404,22 +408,27 @@ class GameEngine():
         
         Returns
         -------
-        score
-            The score earned by the agents for this interaction
+        attackerReward
+            The score earned by the attacker
+        
+        defenderReward
+            The score earned by the defender
         """
-        possibleReward = self.calculateNodeInfectionReward(message.destination)
+        attackerReward = self.calculateNodeInfectionReward(message.destination)
+        defenderReward = len([node for node in self.graph.neighbors(message.destination)])
+
         if message.isMalicious() and label == Defender.HIGH_SUSPICION_LABEL:
-            return possibleReward
+            return [-attackerReward, defenderReward]
         elif message.isMalicious() and label == Defender.MEDIUM_SUSPICION_LABEL:
-            return possibleReward / 2 + 1
+            return [(-attackerReward / 2) - 1, defenderReward]
         elif message.isMalicious():
-            return -possibleReward
+            return [attackerReward, -defenderReward]
         elif not message.isMalicious() and label ==  Defender.HIGH_SUSPICION_LABEL:
-            return -possibleReward
+            return [None, -defenderReward]
         elif not message.isMalicious() and label == Defender.MEDIUM_SUSPICION_LABEL:
-            return -possibleReward / 2 + 1
+            return [None, (-defenderReward / 2) - 1]
         elif not message.isMalicious():
-            return possibleReward
+            return [None, defenderReward]
 
     def analyzeGameResults(self):
         """Return average degree, clustering coefficient, and connectedness of infected vs non-infected graph"""

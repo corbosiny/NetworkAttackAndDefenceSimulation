@@ -4,4 +4,6 @@ TODO:
 
 - generate more networks
 
+- change scoring?
+
 - add in dict for reachable if performance is an issue
