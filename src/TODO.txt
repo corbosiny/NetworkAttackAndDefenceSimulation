@@ -1,17 +1,7 @@
 TODO:
 
-- fix message network inputs:
-  Find important classification data
-  Update Message.py to parse out that data
-  Fix asNetworkInputs()
-  Update defender input size
+- fix blue edge over red edge bug
 
-- get real datasets
+- generate more networks
 
-- Write post analysis
-
-- update scoring maybe
-
-- brainstorm m3 problems facing scalability:
-
-- flag speed up locations
+- add in dict for reachable if performance is an issue
