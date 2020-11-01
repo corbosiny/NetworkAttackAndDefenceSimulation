@@ -35,7 +35,7 @@ class GameEngine():
     COLOR_MAP = {Defender.NO_SUSPICION_LABEL  : 'blue', Defender.LOW_SUSPICION_LABEL  : 'yellow', Defender.MEDIUM_SUSPICION_LABEL :  'orange', Defender.HIGH_SUSPICION_LABEL : 'red'}
     NOT_INFECTED_MARKER = 'o'                                 # Non-infected nodes show up as circles
     INFECTED_MARKER = 'X'                                     # Infected nodes appear as filled X markers
-    GRAPH_DELAY = 3                                           # Time delay in seconds between graph updates
+    GRAPH_DELAY = 1                                           # Time delay in seconds between graph updates
 
     # Indicies for the network file
     NETWORK_SOURCE_IP_INDEX = 0
@@ -43,7 +43,7 @@ class GameEngine():
 
     ###  Method functions
     
-    def __init__(self, trafficPath, attackPath, networkPath, loadModels= False, epsilon= 1):
+    def __init__(self, trafficPath, attackPath, networkPath, loadModels= False, epsilon= 1, visualize= True):
         """Class constructor
         Parameters
         ----------
@@ -62,11 +62,15 @@ class GameEngine():
         epsilon
             float from 0 to 1 representing the probability that each player makes random moves 
 
+        visualize
+            boolean representing whether or not the game should be visualized
+
         Returns
         -------
         None
         """
         self.firstGame = True
+        self.visualizeGame = visualize
         self.trafficPath = trafficPath
         self.attackPath = attackPath
         self.networkPath = networkPath
@@ -161,7 +165,7 @@ class GameEngine():
         while not self.gameOver():
            organizedQueues, trafficInfo, attackIndex = self.generateTrafficQueues()
            self.lastAttackerScore = 0
-           self.displayGraph(displayAttack= True)
+           if self.visualizeGame: self.displayGraph(displayAttack= True)
            for queue in organizedQueues.values():
                for message in queue:
                    if not self.graph.has_edge(message.origin, message.destination): continue
@@ -181,7 +185,7 @@ class GameEngine():
                        self.lastAttackerScore = attackerReward
 
                    print('Current message', str(message), 'was given a suspicion label of:', suspicionLabel)
-           self.displayGraph()
+           if self.visualizeGame: self.displayGraph()
 
     def gameOver(self):
         """Returns true if one player is out of lives"""
@@ -458,11 +462,10 @@ if __name__ == "__main__":
     parser.add_argument('-ep', '--episodes', type= int, default= 1, help= 'Number of games to be played')
     parser.add_argument('-t', '--train', action= 'store_true', help= 'Whether the agents should be training at the end of each game')
     parser.add_argument('-l', '--load', action= 'store_true', help= 'Whether previous models should be loaded in for this game')
+    parser.add_argument('-nv', '--noVisualize', action= 'store_false', help= 'set this flag to turn off the game visualization')
     args = parser.parse_args()
 
-    engine = GameEngine(trafficPath= args.trafficPath, attackPath= args.attackPath, networkPath= args.networkPath, loadModels= args.load)
-    #engine.infectedNodes = ['0']
-    #engine.reachableNodes = [int(engine.isReachable(node)) for node in engine.graph.nodes()]
+    engine = GameEngine(trafficPath= args.trafficPath, attackPath= args.attackPath, networkPath= args.networkPath, loadModels= args.load, visualize= args.noVisualize)
     
     for episode in range(args.episodes):
         engine.initializeGame()
