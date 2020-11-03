@@ -419,18 +419,17 @@ class GameEngine():
             The score earned by the defender
         """
         attackerReward = self.calculateNodeInfectionReward(message.destination)
-        defenderReward = len([node for node in self.graph.neighbors(message.destination)])
-
+        defenderReward = len([edge for edge in self.graph.neighbors(message.destination)]) + 1
         if message.isMalicious() and label == Defender.HIGH_SUSPICION_LABEL:
             return [-attackerReward, defenderReward]
         elif message.isMalicious() and label == Defender.MEDIUM_SUSPICION_LABEL:
-            return [(-attackerReward / 2) - 1, defenderReward]
+            return [(-attackerReward / 2), defenderReward]
         elif message.isMalicious():
             return [attackerReward, -defenderReward]
         elif not message.isMalicious() and label ==  Defender.HIGH_SUSPICION_LABEL:
             return [None, -defenderReward]
         elif not message.isMalicious() and label == Defender.MEDIUM_SUSPICION_LABEL:
-            return [None, (-defenderReward / 2) - 1]
+            return [None, (-defenderReward / 2)]
         elif not message.isMalicious():
             return [None, defenderReward]
 
@@ -466,7 +465,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     engine = GameEngine(trafficPath= args.trafficPath, attackPath= args.attackPath, networkPath= args.networkPath, loadModels= args.load, visualize= args.noVisualize)
-    
+
     for episode in range(args.episodes):
         engine.initializeGame()
         print('Starting episode', episode)
