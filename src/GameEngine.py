@@ -435,7 +435,31 @@ class GameEngine():
 
     def analyzeGameResults(self):
         """Return average degree, clustering coefficient, and connectedness of infected vs non-infected graph"""
-        pass
+
+        # degree_sequence = sorted([d for n, d in self.graph.degree()], reverse=True)  # degree sequence
+        degree_sequence = [d for n, d in self.graph.degree()]  # degree sequence
+        print("Average Degree: ", sum(degree_sequence) / len(degree_sequence), "\t", degree_sequence)
+
+        # degreeCount = collections.Counter(degree_sequence)
+        # deg, cnt = zip(*degreeCount.items())
+
+        # fig, ax = plt.subplots()
+        # plt.bar(deg, cnt, width=0.80, color="b")
+
+        # plt.title("Degree Histogram")
+        # plt.ylabel("Count")
+        # plt.xlabel("Degree")
+        # ax.set_xticks([d + 0.4 for d in deg])
+        # ax.set_xticklabels(deg)
+        # plt.show()
+
+        clusterings = networkx.clustering(self.graph)
+        ccs = []
+        # print(clusterings)
+        for cc in clusterings:
+            ccs.append(clusterings[cc])
+        print("Clustering Coefficients: ", ccs)
+
 
     def train(self):
         """starts the training runs for each player
