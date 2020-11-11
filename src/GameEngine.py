@@ -35,7 +35,8 @@ class GameEngine():
     COLOR_MAP = {Defender.NO_SUSPICION_LABEL  : 'blue', Defender.LOW_SUSPICION_LABEL  : 'yellow', Defender.MEDIUM_SUSPICION_LABEL :  'orange', Defender.HIGH_SUSPICION_LABEL : 'red'}
     NOT_INFECTED_MARKER = 'o'                                 # Non-infected nodes show up as circles
     INFECTED_MARKER = 'X'                                     # Infected nodes appear as filled X markers
-    GRAPH_DELAY = 1                                           # Time delay in seconds between graph updates
+    GRAPH_DELAY = 3                                           # Time delay in seconds between graph updates
+    NODE_SIZE = 100                                           # Size of nodes when being graphed
 
     # Indicies for the network file
     NETWORK_SOURCE_IP_INDEX = 0
@@ -380,7 +381,7 @@ class GameEngine():
             colors = ['k'] * len(self.graph.edges())
             widths = [1] * len(self.graph.edges())       
 
-        sizeFilter = lambda x: 300 if x not in self.infectedNodes else 1
+        sizeFilter = lambda x: GameEngine.NODE_SIZE if x not in self.infectedNodes else 1
         nodeSizes = [sizeFilter(node) for node in self.graph.nodes()]
 
         ax = plt.gca()
@@ -389,7 +390,7 @@ class GameEngine():
         elif self.lastAttackerScore < 0: ax.set_title('Post Round Results : Attack Repulsed')
         elif self.lastAttackerScore > 0: ax.set_title('Post Round Results : Attack Successful')
         else: ax.set_title('Post Round Results')
-        networkx.draw_circular(self.graph, nodelist= self.infectedNodes, node_shape= GameEngine.INFECTED_MARKER, node_color = infectedColorMap, with_labels= False)
+        networkx.draw_circular(self.graph, nodelist= self.infectedNodes, node_shape= GameEngine.INFECTED_MARKER, node_color = infectedColorMap, with_labels= False, node_size= GameEngine.NODE_SIZE)
         networkx.draw_circular(self.graph, node_shape= GameEngine.NOT_INFECTED_MARKER, node_color= notInfectedColorMap, with_labels=True, node_size= nodeSizes, edge_color= colors, width= widths)
 
         plt.show()
