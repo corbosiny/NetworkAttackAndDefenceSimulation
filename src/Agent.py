@@ -26,7 +26,9 @@ class Agent():
     MAX_DATA_LENGTH = 1000                                    # Max number of decision frames the Agent can remember from a fight, average is about 2000 per fight
 
     DEFAULT_MODELS_DIR_PATH = '../local_models'               # Default path to the dir where the trained models are saved for later access
+    DEFAULT_MODELS_SUB_DIR = '{0}_models'                     # Models are further organized into subdirectories to avoid checkpoint overwrites by this naming scheme
     DEFAULT_LOGS_DIR_PATH = '../local_logs'                   # Default path to the dir where training logs are saved for user review
+
 
     EPSILON_MIN = 0.1                                         # Minimum exploration rate for a trained model
     DEFAULT_EPSILON_DECAY = 0.999                             # How fast the exploration rate falls as training persists
@@ -36,7 +38,7 @@ class Agent():
     ### Instance Functions
     def __init__(self, epsilon= 1):
         """Constructor"""
-        self.name = self.__class__.__name__
+        self.name =  self.__class__.__name__
         self.epsilon = epsilon
         self.lossHistory = LossHistory()
         self.prepareForNextGame()
@@ -74,7 +76,8 @@ class Agent():
         -------
         None
         """
-        self.model.save_weights(os.path.join(Agent.DEFAULT_MODELS_DIR_PATH, self.getModelName()))
+        totalDirPath = os.path.join(Agent.DEFAULT_MODELS_DIR_PATH, Agent.DEFAULT_MODELS_SUB_DIR.format(self.name))
+        self.model.save_weights(os.path.join(totalDirPath, self.getModelName()))
         with open(os.path.join(Agent.DEFAULT_LOGS_DIR_PATH, self.getLogsName()), 'a+') as file:
             try:
                 file.write(str(sum(self.lossHistory.losses) / len(self.lossHistory.losses)))
@@ -92,7 +95,8 @@ class Agent():
         None
         """
         print('Model successfully loaded')
-        self.model.load_weights(os.path.join(Agent.DEFAULT_MODELS_DIR_PATH, self.getModelName()))
+        totalDirPath = os.path.join(Agent.DEFAULT_MODELS_DIR_PATH, Agent.DEFAULT_MODELS_SUB_DIR.format(self.name))
+        self.model.load_weights(os.path.join(totalDirPath, self.getModelName()))
 
     ### Abstract methods for the child Agent to implement
     def initializeModel(self):

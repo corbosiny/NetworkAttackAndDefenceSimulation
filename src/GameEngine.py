@@ -30,7 +30,7 @@ class GameEngine():
     """
 
     ### Static Class Variables
-    MAX_BACKGROUND_TRAFFIC_MESSAGES = 5                      # The maximum number of background messages between attacks
+    MAX_BACKGROUND_TRAFFIC_MESSAGES = 30                      # The maximum number of background messages between attacks
 
     COLOR_MAP = {Defender.NO_SUSPICION_LABEL  : 'blue', Defender.LOW_SUSPICION_LABEL  : 'yellow', Defender.MEDIUM_SUSPICION_LABEL :  'orange', Defender.HIGH_SUSPICION_LABEL : 'red'}
     NOT_INFECTED_MARKER = 'o'                                 # Non-infected nodes show up as circles
@@ -170,22 +170,23 @@ class GameEngine():
            for queue in organizedQueues.values():
                for message in queue:
                    if not self.graph.has_edge(message.origin, message.destination): continue
-
+                   skipped = False
                    if random.random() > self.calculateInspectionChance(len(queue)): 
-                       print('Current message', str(message), ' was skipped inspection')
+                       if self.visualizeGame: print('Current message', str(message), ' was skipped inspection')
                        suspicionLabel = Defender.NO_SUSPICION_LABEL
+                       skipped = True
                    else:
                        suspicionLabel = self.defender.inspect(message)
 
                    attackerReward, defenderReward = self.calculateScore(message, suspicionLabel)
                    self.updateNetwork(message, suspicionLabel)
 
-                   self.defender.addTrainingPoint(message, suspicionLabel, defenderReward)
+                   if not skipped: self.defender.addTrainingPoint(message, suspicionLabel, defenderReward)
                    if message.isMalicious(): 
                        self.attacker.addTrainingPoint(trafficInfo, attackIndex, attackerReward)
                        self.lastAttackerScore = attackerReward
 
-                   print('Current message', str(message), 'was given a suspicion label of:', suspicionLabel)
+                   if self.visualizeGame: print('Current message', str(message), 'was given a suspicion label of:', suspicionLabel)
            if self.visualizeGame: self.displayGraph()
 
     def gameOver(self):
@@ -496,8 +497,8 @@ if __name__ == "__main__":
         print('Starting episode', episode)
         engine.runGame()
         print('Episode', episode, 'complete')
-        print('Post game analysis: ')
-        engine.analyzeGameResults()
+        #print('Post game analysis: ')
+        #engine.analyzeGameResults()
         if args.train:
             engine.train()
             print('Training for episode', episode, 'complete')

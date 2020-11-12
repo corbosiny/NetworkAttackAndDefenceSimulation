@@ -13,7 +13,7 @@ class Message():
     TOTPKTS_INDEX = 11
     TOTBYTES_INDEX = 12
     SRCBYTES_INDEX = 13
-    DUR_INDEX = 2
+    DUR_INDEX = 1
     ### Member functions
 
     def __init__(self, args):
@@ -38,7 +38,7 @@ class Message():
         """
         self.origin = args[Message.ORIGIN_INDEX]
         self.destination = args[Message.DESTINATION_INDEX]
-        self.label = args[Message.LABEL_INDEX]
+        self.label = args[Message.LABEL_INDEX].strip()
         self.totpkts = args[Message.TOTPKTS_INDEX]
         self.totbytes = args[Message.TOTBYTES_INDEX]
         self.srcbytes = args[Message.SRCBYTES_INDEX]
