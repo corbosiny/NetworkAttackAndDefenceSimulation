@@ -6,6 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import time
 import math
+import os
 
 # User defined libraries
 from Attacker import Attacker
@@ -41,6 +42,10 @@ class GameEngine():
     # Indicies for the network file
     NETWORK_SOURCE_IP_INDEX = 0
     NETWORK_SINK_IP_INDEX = 1
+
+    GAME_LOG_PATH    =      '../local_logs/GAME_LOG.csv'      # Default path to the dir where game logs are saved for user review            
+    GAME_LOG_HEADERS =      'Network,Rounds Played,Defender Degree,Attacker Degree, Defender Clustering, Attacker Clustering,Num Defenders, Num Attackers'
+    GAME_ROW_STRING  =      '{0},{1},{2},{3},{4},{5},{6},{7}\n'
 
     ###  Method functions
     
@@ -93,14 +98,17 @@ class GameEngine():
         self.colorMap = {}
         self.loadTrafficDataset(self.trafficPath)
         self.initializeNetwork(self.networkPath)
-        
+        self.roundNumber = 0
+
         if self.firstGame:
             self.firstGame = False
             self.attacker = Attacker(datasetPath= self.attackPath, networkSize= len(self.graph.nodes()), epsilon= self.startingEpsilon)
             self.defender = Defender(epsilon= self.startingEpsilon)
             if self.loadModels:
                 self.attacker.loadModel()
+                self.attacker.epsilon = Attacker.EPSILON_MIN
                 self.defender.loadModel()
+                self.defender.epsilon = Defender.EPSILON_MIN
         else:
             self.attacker.prepareForNextGame()
             self.defender.prepareForNextGame()
@@ -133,7 +141,8 @@ class GameEngine():
         plt.ion()
         self.graph = networkx.DiGraph()
         with open(networkPath, 'r') as file:
-            for line in file.readlines():
+            lines = file.readlines()[1:]
+            for line in lines:
                 elems = line.split(',')
                 sourceIP = elems[GameEngine.NETWORK_SOURCE_IP_INDEX].strip()
                 sinkIP = elems[GameEngine.NETWORK_SINK_IP_INDEX].strip()
@@ -164,6 +173,7 @@ class GameEngine():
         """
         self.wait = False
         while not self.gameOver():
+           self.roundNumber += 1
            organizedQueues, trafficInfo, attackIndex = self.generateTrafficQueues()
            self.lastAttackerScore = 0
            if self.visualizeGame: self.displayGraph(displayAttack= True)
@@ -216,13 +226,15 @@ class GameEngine():
         
         nodeInformation = [[len(organizedQueues[node]), self.isReachable(node), self.calculateNodeInfectionReward(node)] for node in self.graph.nodes()]
         trafficFlow, reachable, infectionScores = list(zip(*nodeInformation))
+        trafficInfo = (trafficFlow + reachable + infectionScores)
         
         self.attackMessage, attackIndex = self.attacker.getAttack(trafficFlow, reachable, infectionScores, self.infectedNodes, self.graph)
         if self.attackMessage != None:
             position = random.randint(0, len(organizedQueues[self.attackMessage.destination]) + 1)
             organizedQueues[self.attackMessage.destination].insert(position, self.attackMessage)
+        else:
+            self.attacker.addTrainingPoint(trafficInfo, self.attacker.OUTPUT_SIZE - 1, 0)
             
-        trafficInfo = (trafficFlow + reachable + infectionScores)
         return organizedQueues, trafficInfo, attackIndex
 
     def generateBackgroundTraffic(self):
@@ -435,12 +447,8 @@ class GameEngine():
         elif not message.isMalicious():
             return [None, defenderReward]
 
-    def analyzeGameResults(self):
+    def logGameResults(self):
         """Return average degree, clustering coefficient, and connectedness of infected vs non-infected graph"""
-
-        # degree_sequence = sorted([d for n, d in self.graph.degree()], reverse=True)  # degree sequence
-        degree_sequence = [d for n, d in self.graph.degree()]  # degree sequence
-        print("Average Degree: ", sum(degree_sequence) / len(degree_sequence), "\t", degree_sequence)
 
         # degreeCount = collections.Counter(degree_sequence)
         # deg, cnt = zip(*degreeCount.items())
@@ -455,13 +463,40 @@ class GameEngine():
         # ax.set_xticklabels(deg)
         # plt.show()
 
-        clusterings = networkx.clustering(self.graph)
-        ccs = []
-        # print(clusterings)
-        for cc in clusterings:
-            ccs.append(clusterings[cc])
-        print("Clustering Coefficients: ", ccs)
+        networkFileName = self.networkPath.split('/')[-1]
+        networkName = networkFileName.split('.')[0]
 
+        try:
+            defenderDegrees = [d for n, d in self.graph.degree() if n not in self.infectedNodes]
+            avgDefenderDegree = round(sum(defenderDegrees) / len(defenderDegrees), 3)
+        except:
+            avgDefenderDegree = 0
+        
+        try:
+            attackerDegrees = [d for n, d in self.graph.degree() if n in self.infectedNodes]
+            avgAttackerDegree = round(sum(attackerDegrees) / len(attackerDegrees), 3)
+        except:
+            avgAttackerDegree = 0
+
+        clusterings = networkx.clustering(self.graph)
+
+        try:
+            defenderClusterings = [clusterings[node] for node in clusterings if node not in self.infectedNodes]
+            avgDefenderClusterings = round(sum(defenderClusterings) / len(defenderClusterings), 3)
+        except:
+            avgDefenderClusterings = 0
+
+        try:    
+            attackerClusterings = [clusterings[node] for node in clusterings if node in self.infectedNodes]
+            avgAttackerClusterings = round(sum(attackerClusterings) / len(attackerClusterings), 3)
+        except:
+            avgAttackerClusterings = 0
+
+        numNotInfectedNodes = len(self.graph.nodes()) - len(self.infectedNodes)
+        numInfectedNodes = len(self.infectedNodes)
+
+        with open(os.path.join(GameEngine.GAME_LOG_PATH), 'a+') as file:
+            file.write(GameEngine.GAME_ROW_STRING.format(networkName,self.roundNumber,avgDefenderDegree,avgAttackerDegree,avgDefenderClusterings,avgAttackerClusterings,numNotInfectedNodes,numInfectedNodes))
 
     def train(self):
         """starts the training runs for each player
@@ -497,8 +532,7 @@ if __name__ == "__main__":
         print('Starting episode', episode)
         engine.runGame()
         print('Episode', episode, 'complete')
-        #print('Post game analysis: ')
-        #engine.analyzeGameResults()
+        engine.logGameResults()
         if args.train:
             engine.train()
             print('Training for episode', episode, 'complete')
