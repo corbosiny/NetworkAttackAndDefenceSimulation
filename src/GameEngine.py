@@ -403,7 +403,7 @@ class GameEngine():
         #elif self.lastAttackerScore < 0: ax.set_title('Post Round Results : Attack Repulsed')
         #elif self.lastAttackerScore > 0: ax.set_title('Post Round Results : Attack Successful')
         #else: ax.set_title('Post Round Results')
-        networkx.draw_circular(self.graph, nodelist= self.infectedNodes, node_shape= GameEngine.INFECTED_MARKER, node_color = infectedColorMap, with_labels= False, node_size= GameEngine.NODE_SIZE)
+        networkx.draw_circular(self.graph, nodelist= self.infectedNodes, node_shape= GameEngine.INFECTED_MARKER, node_color = infectedColorMap, with_labels= False, node_size= GameEngine.NODE_SIZE * 4)
         networkx.draw_circular(self.graph, node_shape= GameEngine.NOT_INFECTED_MARKER, node_color= notInfectedColorMap, with_labels=True, node_size= nodeSizes, edge_color= colors, width= widths)
 
         plt.show()
