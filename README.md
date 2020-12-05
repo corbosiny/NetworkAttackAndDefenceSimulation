@@ -39,7 +39,10 @@ These libraries can sometimes have serious issues installing themselves or their
 
 To double check that the game files were properly set up the example agent can be run. cd into the src directory. Then either run the following command on your terminal of choice:
 
-`python3 GameEngine.py`
+`python GameEngine.py`
+
+or if you have Python2 and 3 installed:  
+`python3 GameEngine.py` 
 ---
 ## Parameters to run the GameEngine
 
