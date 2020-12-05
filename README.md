@@ -24,13 +24,13 @@ or if you have Python2 and 3 installed:
 
 This should be called in the top level directory of the repo. This will install the following libraries you will need to create game environments that serve as a wrapper abstracting the interface between your agent and the underlying emulator:
 
--tensorflow
--networkx
--matplotlib
--numpy
--pandas
--scipy
--keras
+-tensorflow  
+-networkx   
+-matplotlib  
+-numpy  
+-pandas  
+-scipy  
+-keras  
 
 These libraries can sometimes have serious issues installing themselves or their dependencies on a windows machine, this usually can be tied to not having the correct version of python installed.
 
