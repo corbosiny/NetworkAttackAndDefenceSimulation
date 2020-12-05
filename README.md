@@ -59,7 +59,6 @@ Each of the engine parameters have a default value that can be observed by looki
 `-l, --load`, Boolean, if this flag is set new models won't be initialized, past models will be loaded in. These models are saved under local_models in individual named folders    
 `-nv, --noVisualize`, Boolean, if this flag is called the visualization will be turned off    
 ---
-
 ## Building your own simulation
 
 In order to implement different underlying models for the attacker and defender there are few key parts of the code that need to be modified. Each class in the source code will discussed below and the parts that need to be edited will be discussed. Alongside these descriptions every function has detailed comments that can be read for further insight within the source code.
@@ -91,8 +90,6 @@ Uses the training data stored in the memory object variable during training and 
 #### Training Checkpoints
 
 A training episode consists of one play through of a game between the Attacker and Defender, a game is over when the attacker can no longer reach any non-infected nodes. Once post game training is complete a checkpoint will be made by Agent.py in order to save the model for later use. As well custom training logs will be made for each unique class, in this case only Attacker and Defender, that will show the training error of the Agent as it is learning. These logs and models are stored in the logs and models directories respectively and are formatted as local_models/{class_name}Models/. and local_logs/{class_name}{Log}. Note that the formatting is based on the class name and so only one instance of a model for each unique class can be stored as of now. Furthermore a gitignore inside each of these folders prevents them from being tracked by git unless moved to another folder to avoid frequent merge conflicts when separate users who are training models push to the same branch.
-
----
 
 ### Message Class
 
