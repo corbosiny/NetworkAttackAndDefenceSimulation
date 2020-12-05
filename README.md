@@ -43,15 +43,15 @@ To double check that the game files were properly set up the example agent can b
 ---
 ## Parameters to run the GameEngine
 
-There are a set of parameters that can be tacked on when running the GameEngine. Each of these parameters has a default value that can be observed by looking at the argparser code at the bottom of the GameEngine.py file. The full list of parameters and their descriptions is shown below:
+There are a set of parameters that can be tacked on when running the GameEngine. Each of these parameters has a default value that can be observed by looking at the argparser code at the bottom of the GameEngine.py file. The full list of parameters and their descriptions is shown below.
 
-`-ap, --attackPath` : String file path to the csv file containing the attack message metadata, see examples in the datasets folder 
-`-tp, --trafficPath` : String file path to the csv file containing the background traffic message metadata, see examples in the datasets folder 
-`-np, --networkPath` : String file path to the csv file containing the attack message metadata, see examples in the datasets folder 
-`-ep, --episodes` : Integer representing the number of episodes that will be played
-`-t, --train` : Boolean, if this flag is set both models will train after each episode and a training log will be created
-`-l, --load` : Boolean, if this flag is set new models won't be initialized, past models will be loaded in. These models are saved under local_models in individual named folders
-`-nv, --noVisualize` : Boolean, if this flag is called the visualization will be turned off
+`-ap, --attackPath`, String file path to the csv file containing the attack message metadata, see examples in the datasets folder 
+`-tp, --trafficPath`, String file path to the csv file containing the background traffic message metadata, see examples in the datasets folder 
+`-np, --networkPath`, String file path to the csv file containing the attack message metadata, see examples in the datasets folder 
+`-ep, --episodes`, Integer representing the number of episodes that will be played
+`-t, --train`, Boolean, if this flag is set both models will train after each episode and a training log will be created
+`-l, --load`, Boolean, if this flag is set new models won't be initialized, past models will be loaded in. These models are saved under local_models in individual named folders
+`-nv, --noVisualize`, : Boolean, if this flag is called the visualization will be turned off
 ---
 ## Agent class
 
