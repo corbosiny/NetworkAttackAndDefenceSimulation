@@ -60,7 +60,7 @@ The Agent class serves as a template from which the RL models can inherit from. 
 There are three main functions that need to be implemented by the attacker or defender after they inherit from Agent:
 
 -initializeNetwork  
--addTrainingPoint
+-addTrainingPoint  
 -trainModel
 
 Each section below gives a description of the interface required for each function and it's purpose. Further documentation can be seen inside the code of Agent.py
