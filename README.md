@@ -13,13 +13,13 @@ If running on linux please update and upgrade your current distro:
 This code only works with Python 3.7, we recommend Python 3.7.2. Before trying to install dependencies it is recommend to open a command line interface of choice inside the repo and run:   
 `pip install --upgrade pip`  
 
-or if you have Python2 and 3 installed:
+or if you have Python2 and 3 installed:  
 `pip3 install --upgrade pip` 
 
-To download the necessary dependencies after cloning the repo call:
+To download the necessary dependencies after cloning the repo call:  
 `pip install -r requirements.txt`
 
-or if you have Python2 and 3 installed:
+or if you have Python2 and 3 installed:  
 `pip3 install --upgrade pip` 
 
 This should be called in the top level directory of the repo. This will install the following libraries you will need to create game environments that serve as a wrapper abstracting the interface between your agent and the underlying emulator:
