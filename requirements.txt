@@ -1,0 +1,6 @@
+pandas==0.23.4
+numpy==1.15.4
+networkx==2.5
+matplotlib==3.0.2
+tensorflow==1.2.0
+keras==2.4.3

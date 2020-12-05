@@ -1,9 +1,0 @@
-TODO:
-
-- fix blue edge over red edge bug
-
-- generate more networks
-
-- change scoring?
-
-- add in dict for reachable if performance is an issue
