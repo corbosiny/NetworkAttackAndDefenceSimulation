@@ -5,7 +5,7 @@ Along side this readme each function in the source code has a header explaining 
 
 ---
 ## Installing Dependancies
-This section is for anyone running this project localy on your machine. If you wish to skip this section, which is recommended, instead clone this project to a Google Collab project and the baseline dependancies should already work. Or you can use the provide Google Collab project: https://colab.research.google.com/drive/1NWNoH0t0w3wWuPwV0FkD57FzDAtTk-Cj?usp=sharing
+This section is for anyone running this project localy on your machine. If you wish to skip this section, which is recommended, instead clone this project to a Google Colab project and the baseline dependancies should already work. Or you can use the provide Google Collab project: https://colab.research.google.com/drive/1NWNoH0t0w3wWuPwV0FkD57FzDAtTk-Cj?usp=sharing
 
 If running on linux please update and upgrade your current distro:
 `sudo apt-get update`  
