@@ -4,6 +4,11 @@ This readme will take you through how to get this repo up and running with the e
 Along side this readme each function in the source code has a header explaining its use, inputs, and return values. Lastly, in the GameEngine code at the bottom is a detailed 
 
 ---
+## Network Simulation Purpose
+
+This simulation trains an attacker and defender with competing goals in an adversarial fashion over a number of games to observe emergent strategies from both sides. Oberservations are also made on which network types favor each role in the game. The goal of the game is for the attacker to infiltrate the user submitted network and try to infect as much of the network as possible before being isolated inside it's already infected regions. The goal of the defender is to detect and isolate the attacker without damaging as much of the initial network structure as possible. One game is played over a series of rounds. The attacker is able to infect one connected node at the beginning of each round by sending an infected message. The defender is then given a limited amount of simulated message traffic to browse through to try and detect the attacker. The defender then has to chose one link between nodes to eliminate. The game is played until the entire network is infected or the attacker has been isolated.
+
+---
 ## Installing Dependancies
 This section is for anyone running this project localy on your machine. If you wish to skip this section, which is recommended, instead clone this project to a Google Colab project and the baseline dependancies should already work. Or you can use the provide Google Collab project: https://colab.research.google.com/drive/1NWNoH0t0w3wWuPwV0FkD57FzDAtTk-Cj?usp=sharing
 
